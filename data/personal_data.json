@@ -1,0 +1,13 @@
+{
+  "name": "Max Mustermann",
+  "street": "Musterstrasse 41",
+  "postal_code": "80331",
+  "city": "Muenchen",
+  "phone": "+49 89 123456",
+  "mobile": "+49 1520 7971234",
+  "email": "max.mustermann@example.com",
+  "birth_date": "1990-02-15",
+  "birth_place": "Muenchen",
+  "marital_status": "ledig",
+  "signing_place": "Muenchen"
+}
