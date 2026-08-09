@@ -28,18 +28,25 @@
     ],
     "education": [
       {
-        "start": "2014-10",
-        "end": "2016-09",
-        "title": "M.Sc. Maschinenwesen",
-        "organization": "Technische Universitaet Muenchen",
-        "location": "Muenchen"
+        "start_date": "2014-10",
+        "end_date": "2016-09",
+        "degree": "M.Sc. Maschinenwesen",
+        "institution": "Technische Universitaet Muenchen",
+        "location": "Muenchen",
+        "items": [
+          "Schwerpunkt: Maschinenbau und Konstruktion",
+          "Abschlussarbeit: Entwicklung und Auslegung technischer Systeme"
+        ]
       },
       {
-        "start": "2010-10",
-        "end": "2014-09",
-        "title": "B.Sc. Maschinenwesen",
-        "organization": "Technische Universitaet Muenchen",
-        "location": "Muenchen"
+        "start_date": "2010-10",
+        "end_date": "2014-09",
+        "degree": "B.Sc. Maschinenwesen",
+        "institution": "Technische Universitaet Muenchen",
+        "location": "Muenchen",
+        "items": [
+          "Schwerpunkt: Technische Mechanik und Konstruktion"
+        ]
       }
     ],
     "additional_sections": [

@@ -46,6 +46,8 @@ LANGUAGE_LEVELS = {
     "en": {1: "Beginner", 2: "Basic", 3: "Intermediate", 4: "Advanced", 5: "Fluent", 6: "Native speaker"},
 }
 
+EDUCATION_FIELDS = ("start_date", "end_date", "degree", "institution", "location", "items")
+
 I18N = {
     "de": {
         "latex_language": "ngerman",
@@ -271,9 +273,30 @@ def _validate_professional_experience_entry(entry: dict[str, Any], context: str)
 
 
 def _validate_education_entry(entry: dict[str, Any], context: str) -> None:
-    _require_month_string(entry.get("start"), f"{context}.start")
-    _validate_optional_month(entry.get("end"), f"{context}.end")
-    if not _entry_has_display_content(entry):
+    unknown_keys = [key for key in entry if key not in EDUCATION_FIELDS]
+    if unknown_keys:
+        raise ValidationError(f"{context}: unknown field(s): {', '.join(unknown_keys)}")
+
+    _require_month_string(entry.get("start_date"), f"{context}.start_date")
+    _validate_optional_month(entry.get("end_date"), f"{context}.end_date")
+
+    has_visible_content = False
+    for field_name in ("degree", "institution", "location"):
+        value = entry.get(field_name)
+        if value is None:
+            continue
+        _require_non_empty_string(value, f"{context}.{field_name}")
+        has_visible_content = True
+
+    items = entry.get("items")
+    if items is not None:
+        items_list = _require_list(items, f"{context}.items")
+        for index, item in enumerate(items_list):
+            _require_non_empty_string(item, f"{context}.items[{index}]")
+        if items_list:
+            has_visible_content = True
+
+    if not has_visible_content:
         raise ValidationError(f"{context}: entry must contain at least one visible field")
 
 
@@ -501,6 +524,41 @@ def _date_range_for_entry(entry: dict[str, Any], language: str, context: str) ->
     return f"{start_text} -- {end_text}"
 
 
+def _education_date_text(entry: dict[str, Any], context: str) -> str:
+    start_text = format_month(_require_non_empty_string(entry.get("start_date"), f"{context}.start_date"), f"{context}.start_date")
+    end = entry.get("end_date")
+    if end is None:
+        return start_text
+    if isinstance(end, str) and not end.strip():
+        return start_text
+    end_text = format_month(_require_non_empty_string(end, f"{context}.end_date"), f"{context}.end_date")
+    return f"{start_text} -- {end_text}"
+
+
+def _education_right_column_text(entry: dict[str, Any], context: str) -> str:
+    components: list[str] = []
+
+    heading_parts: list[str] = []
+    for field_name in ("degree", "institution", "location"):
+        value = entry.get(field_name)
+        if value is None:
+            continue
+        heading_parts.append(latex_escape(_require_non_empty_string(value, f"{context}.{field_name}")))
+
+    if heading_parts:
+        components.append(", ".join(heading_parts) + r"\par")
+
+    items = entry.get("items")
+    if items is not None:
+        if components:
+            components.append(r"\vspace{0.05292cm}")
+        for index, item in enumerate(items):
+            item_text = _require_non_empty_string(item, f"{context}.items[{index}]")
+            components.append(r"\CVTask{" + latex_escape(item_text) + "}")
+
+    return "\n".join(components)
+
+
 def _render_additional_entry(entry: Any, language: str, context: str) -> tuple[str, str]:
     if isinstance(entry, str):
         return "", latex_escape(_require_non_empty_string(entry, context)) + r"\par"
@@ -603,8 +661,9 @@ def generate_cv_latex(
     lines.append(r"\CVSection{" + latex_escape(i18n["education"]) + "}")
     for index, raw_entry in enumerate(cv["education"]):
         entry = _require_dict(raw_entry, f"education[{index}]")
-        date_text = _date_range_for_entry(entry, lang, f"education[{index}]")
-        right_text = _entry_right_column_text(entry, lang, for_experience=False)
+        context = f"education[{index}]"
+        date_text = _education_date_text(entry, context)
+        right_text = _education_right_column_text(entry, context)
         lines.append(r"\CVActivityEntry{" + latex_escape(date_text) + "}{%\n" + right_text + "\n}")
 
     for sec_index, raw_section in enumerate(cv.get("additional_sections", [])):

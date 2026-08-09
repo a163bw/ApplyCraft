@@ -2,11 +2,18 @@ from src.build_pdf import main
 
 
 PERSONAL_DATA = {
-    "personal_data": "data/personal_data_Horvath.json",
+    "personal_data": "data/personal_data.json",
     "application": "data/application.json",
     "photo": "data/profile_photo.jpg",
     "signature": "data/signature.png",
-}
+    }
+
+PERSONAL_DATA = {
+    "personal_data": "application_databank/personal_data.json",
+    "application": "application_databank/application.json",
+    "photo": "data/profile_photo.jpg",
+    "signature": "data/signature.png",
+    }
 
 def _build_args_from_personal_data(config: dict[str, str]) -> list[str]:
     args = [
@@ -14,6 +21,7 @@ def _build_args_from_personal_data(config: dict[str, str]) -> list[str]:
         config["personal_data"],
         "--application",
         config["application"],
+        "--cover-letter",
     ]
 
     photo = config.get("photo")
@@ -27,7 +35,5 @@ def _build_args_from_personal_data(config: dict[str, str]) -> list[str]:
     return args
 
 
-print(_build_args_from_personal_data(PERSONAL_DATA))
-
-# if __name__ == "__main__":
-#     raise SystemExit(main(_build_args_from_personal_data(PERSONAL_DATA)))
+if __name__ == "__main__":
+    raise SystemExit(main(_build_args_from_personal_data(PERSONAL_DATA)))
