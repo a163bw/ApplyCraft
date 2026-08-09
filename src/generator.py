@@ -11,28 +11,23 @@ from typing import Any
 REQUIRED_PERSONAL_KEYS = (
     "first_name",
     "last_name",
+    "birth_date",
+    "birth_place",
     "address",
     "postal_code",
     "city",
-    "email",
 )
 
-REQUIRED_LABELS = {
+PERSONAL_DATA_GROUPED_LABELS = {
     "de": {
-        "first_name": "Vorname",
-        "last_name": "Nachname",
-        "address": "Adresse",
-        "postal_code": "Postleitzahl",
-        "city": "Ort",
-        "email": "E-Mail",
+        "name": "Name",
+        "birth": "Geburtsdatum/-ort",
+        "address": "Addresse",
     },
     "en": {
-        "first_name": "First name",
-        "last_name": "Last name",
+        "name": "Name",
+        "birth": "Date / Place of birth",
         "address": "Address",
-        "postal_code": "Postal code",
-        "city": "City",
-        "email": "Email",
     },
 }
 
@@ -79,6 +74,37 @@ I18N = {
         "cover_letter_salutation": "Dear Sir or Madam,",
         "cover_letter_reference": "Ref.",
     },
+}
+
+MONTH_NAMES = {
+    "de": (
+        "Januar",
+        "Februar",
+        "Maerz",
+        "April",
+        "Mai",
+        "Juni",
+        "Juli",
+        "August",
+        "September",
+        "Oktober",
+        "November",
+        "Dezember",
+    ),
+    "en": (
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ),
 }
 
 IMAGE_EXTENSIONS = (".jpeg", ".jpg", ".png", ".webp", ".bmp", ".gif", ".tiff", ".tif")
@@ -164,12 +190,31 @@ def _resolve_required_fields(required_fields: dict[str, Any], language: str) -> 
 
     resolved_rows: list[tuple[str, str]] = []
     resolved_values: dict[str, str] = {}
-    for key, raw_value in required_fields.items():
+    for key in REQUIRED_PERSONAL_KEYS:
+        raw_value = required_fields[key]
         resolved = resolve_language_value(raw_value, language, f"required_fields.{key}")
         if resolved is None or not resolved.strip():
             raise ValidationError(f"required_fields.{key} must resolve to a non-empty string")
         resolved_values[key] = resolved
-        resolved_rows.append((REQUIRED_LABELS[language][key], resolved))
+
+    resolved_rows.append(
+        (
+            PERSONAL_DATA_GROUPED_LABELS[language]["name"],
+            latex_escape(resolved_values["first_name"]) + " " + latex_escape(resolved_values["last_name"]),
+        )
+    )
+    resolved_rows.append(
+        (
+            PERSONAL_DATA_GROUPED_LABELS[language]["birth"],
+            latex_escape(format_long_date(resolved_values["birth_date"], language)) + ", " + latex_escape(resolved_values["birth_place"]),
+        )
+    )
+    resolved_rows.append(
+        (
+            PERSONAL_DATA_GROUPED_LABELS[language]["address"],
+            latex_escape(resolved_values["address"]) + r"\par " + latex_escape(resolved_values["postal_code"]) + ", " + latex_escape(resolved_values["city"]),
+        )
+    )
 
     return resolved_rows, resolved_values
 
@@ -440,11 +485,10 @@ def format_month(value: str, context: str) -> str:
     return f"{month}.{year}"
 
 
-def format_signing_date(value: str, language: str) -> str:
+def format_long_date(value: str, language: str) -> str:
     parsed = date.fromisoformat(_require_date(value, "date"))
-    if language == "de":
-        return parsed.strftime("%d.%m.%Y")
-    return parsed.isoformat()
+    month_name = MONTH_NAMES[language][parsed.month - 1]
+    return f"{parsed.day:02d} {month_name} {parsed.year}"
 
 
 def _first_existing_file(paths: list[Path]) -> Path | None:
@@ -564,22 +608,36 @@ def _render_additional_entry(entry: Any, language: str, context: str) -> tuple[s
         return "", latex_escape(_require_non_empty_string(entry, context)) + r"\par"
 
     entry_dict = _require_dict(entry, context)
-    left = _date_range_for_entry(entry_dict, language, context) if "start" in entry_dict else ""
-
     title = entry_dict.get("title")
     description = entry_dict.get("description")
     organization = entry_dict.get("organization")
     location = entry_dict.get("location")
     text = entry_dict.get("text") or entry_dict.get("name")
 
+    title_is_non_empty = isinstance(title, str) and title.strip()
+    description_is_non_empty = isinstance(description, str) and description.strip()
+    has_date = "start" in entry_dict
+    has_other_heading_fields = any(
+        isinstance(value, str) and value.strip()
+        for value in (organization, location, text)
+    )
+
+    if not has_date and title_is_non_empty and description_is_non_empty and not has_other_heading_fields:
+        assert isinstance(title, str)
+        assert isinstance(description, str)
+        return title.strip(), latex_escape(description.strip()) + r"\par"
+
+    left = _date_range_for_entry(entry_dict, language, context) if has_date else ""
+
     components: list[str] = []
     heading_parts = [part for part in (title, organization, location) if isinstance(part, str) and part.strip()]
     if heading_parts:
         components.append(latex_escape(", ".join(heading_parts)) + r"\par")
-    if isinstance(description, str) and description.strip():
-        components.append(latex_escape(description) + r"\par")
+    if description_is_non_empty:
+        assert isinstance(description, str)
+        components.append(latex_escape(description.strip()) + r"\par")
     if isinstance(text, str) and text.strip():
-        components.append(latex_escape(text) + r"\par")
+        components.append(latex_escape(text.strip()) + r"\par")
 
     if not components:
         raise ValidationError(f"{context}: entry must contain at least one visible field")
@@ -636,8 +694,11 @@ def generate_cv_latex(
     lines.append(r"\CVDocumentTitle{" + latex_escape(i18n["document_title"]) + "}")
 
     rows = [
+        r"\CVPersonalDataRow{" + latex_escape(label) + "}{" + value + "}"
+        for label, value in resolved.personal_required_rows
+    ] + [
         r"\CVPersonalDataRow{" + latex_escape(label) + "}{" + latex_escape(value) + "}"
-        for label, value in (resolved.personal_required_rows + resolved.personal_optional_rows)
+        for label, value in resolved.personal_optional_rows
     ]
     rows_block = "\n".join(rows)
     if photo_path is None:
@@ -681,7 +742,7 @@ def generate_cv_latex(
     lines.append("}")
 
     signing_place = resolved.signing_place
-    signing_date = format_signing_date(cv["signing_date"], lang)
+    signing_date = format_long_date(cv["signing_date"], lang)
     lines.append(r"\CVClosingLine{" + latex_escape(signing_place) + "}{" + latex_escape(signing_date) + "}")
     if signature_path is not None:
         lines.append(r"\CVSignatureImage{" + _latex_asset_path(signature_path) + "}")
@@ -703,7 +764,7 @@ def generate_cover_letter_preamble(resolved: BuildInputs) -> str:
         subject += r"\par\normalfont[" + latex_escape(resolved.i18n["cover_letter_reference"]) + ": " + latex_escape(reference) + "]"
 
     signing_place = resolved.signing_place
-    application_date = format_signing_date(_require_non_empty_string(cover_letter.get("application_date"), "application.cover_letter.application_date"), resolved.language)
+    application_date = format_long_date(_require_non_empty_string(cover_letter.get("application_date"), "application.cover_letter.application_date"), resolved.language)
 
     header_lines = [
         r"\begingroup",
@@ -716,9 +777,10 @@ def generate_cover_letter_preamble(resolved: BuildInputs) -> str:
         r"\raggedleft\fontsize{11pt}{13.2pt}\selectfont",
         latex_escape(sender_street) + r"\par",
         sender_postal_city + r"\par",
-        latex_escape(resolved.i18n["email_label"]) + ": " + latex_escape(resolved.personal_required_values["email"]) + r"\par",
         r"\endgroup",
     ]
+    for label, value in resolved.personal_optional_rows:
+        header_lines.insert(-1, latex_escape(label) + ": " + latex_escape(value) + r"\par")
 
     preamble_lines = [
         r"\selectlanguage{" + resolved.i18n["latex_language"] + "}",

@@ -2,15 +2,14 @@
   "required_fields": {
     "first_name": "Max",
     "last_name": "Mustermann",
+    "birth_date": "1985-11-05",
+    "birth_place": "Budapest",
     "address": "Musterstrasse 41",
     "postal_code": "80331",
-    "city": "Muenchen",
-    "email": "max.mustermann@example.com"
+    "city": "Muenchen"
   },
   "optional_fields": {
     "Telefon": "+49 89 123456",
-    "Geburtsdatum": "1990-02-15",
-    "Geburtsort": "Muenchen",
     "Familienstand": {
       "de": "ledig",
       "en": "single"
