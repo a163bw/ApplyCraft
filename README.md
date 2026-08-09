@@ -1,123 +1,75 @@
-# ApplyCraft deterministic CV + cover letter generator
+# ApplyCraft
 
-This project generates:
+Deterministic CV and cover-letter generation from JSON input and static LaTeX layouts.
 
+## Run
+
+Generate the CV LaTeX only:
+
+```powershell
+.venv\bin\python.exe applycraft.py --skip-pdf
+```
+
+Run with defaults (uses `data/personal_data.json` and `data/application.json`):
+
+```powershell
+.venv\bin\python.exe applycraft.py
+```
+
+Run by absolute script path (defaults still resolve from the project root):
+
+```powershell
+& D:/Documents/GitRepos/ApplyCraft/.venv/bin/python.exe D:/Documents/GitRepos/ApplyCraft/applycraft.py
+```
+
+Generate the CV PDF:
+
+```powershell
+.venv\bin\python.exe applycraft.py
+```
+
+Run with user-provided JSON and image paths:
+
+```powershell
+.venv\bin\python.exe applycraft.py `
+	--personal-data data/personal_data_Horvath.json `
+	--application data/application_.json `
+	--photo data/profile_photo.jpg `
+	--signature data/signature.png
+```
+
+The same command with absolute input paths:
+
+```powershell
+.venv\bin\python.exe applycraft.py `
+	--personal-data "D:/input/personal_data.json" `
+	--application "D:/input/application.json" `
+	--photo "D:/input/profile_photo.jpg" `
+	--signature "D:/input/signature.png"
+```
+
+Generate CV plus cover-letter LaTeX:
+
+```powershell
+.venv\bin\python.exe applycraft.py --skip-pdf --cover-letter
+```
+
+Generate CV plus cover-letter PDFs:
+
+```powershell
+.venv\bin\python.exe applycraft.py --cover-letter
+```
+
+Generated outputs:
+
+- `generated/generated_cv_content.tex`
+- `generated/generated_cover_letter_preamble.tex`
+- `generated/generated_cover_letter_body.tex`
 - `output/cv.pdf`
 - `output/cover_letter.pdf`
 
-from:
-
-- `personal_data.json`
-- `application.json`
-- optional photo image
-- optional signature image
-
-The visual layout is reused from the supplied Overleaf projects in `tmp_overleaf/` and compiled locally with `pdflatex` (MiKTeX compatible).
-
-## Install
+## Tests
 
 ```powershell
-python -m pip install -e .
+.venv\bin\python.exe -m pytest -q
 ```
-
-## Generate
-
-```powershell
-python -m cv_generator generate --personal-data data/personal_data.json --application data/application.json --output-dir output
-```
-
-Default convenience runner (no arguments):
-
-```powershell
-python applycraft.py
-```
-
-This uses:
-
-- `data/personal_data.json`
-- `data/application.json`
-- `output/`
-
-Optional image overrides:
-
-```powershell
-python -m cv_generator generate --personal-data data/personal_data.json --application data/application.json --photo data/profile_photo.jpg --signature data/signature.png --output-dir output
-```
-
-## JSON rules
-
-- `application.language` supports `de` or `en` only.
-- User-provided text is passed through as-is (only LaTeX escaping is applied).
-- CV professional experience, education, additional sections, skill subsections, and cover-letter paragraphs are all dynamic arrays.
-- Skill section `type` is explicit: `general` (levels 1-4) or `language` (levels 1-6).
-- Invalid levels, dates, image files, or missing required fields fail with clear validation errors.
-- Cover letter date always comes from JSON (`application.cover_letter.application_date`).
-
-## Optional Photo And Signature
-
-Deterministic source precedence for optional assets:
-
-1. CLI flags: `--photo`, `--signature`
-2. `personal_data.json`: `photo`, `signature`
-3. `application.json`: `photo`, `signature`
-4. Auto-discovered defaults in the data directory (same folder as `application.json`)
-
-Auto-discovered file names:
-
-- Photo: `profile_photo.*` then `photo.*`
-- Signature: `signature.*` then `signatur.*`
-
-Supported default extensions (in order):
-
-- `.jpeg`, `.jpg`, `.png`, `.webp`, `.bmp`, `.gif`, `.tiff`, `.tif`
-
-## Required JSON fields
-
-### personal_data.json
-
-Required strings:
-
-- `name`
-- `street`
-- `postal_code`
-- `city`
-- `phone`
-- `mobile`
-- `email`
-- `birth_date` (`YYYY-MM-DD`)
-- `birth_place`
-- `marital_status`
-
-Optional:
-
-- `signing_place`
-- `photo`
-- `signature`
-
-### application.json
-
-Required top-level:
-
-- `language`
-- `cv`
-- `cover_letter`
-
-`cv` requires:
-
-- `professional_experience` (array)
-- `education` (array)
-- `skills.sections` (array)
-- `signing_date` (`YYYY-MM-DD`)
-
-`cover_letter` requires:
-
-- `company`
-- `company_city`
-- `application_date` (`YYYY-MM-DD`)
-- `body_paragraphs` (non-empty array)
-
-Optional cover-letter fields include:
-
-- `company_postal_code`, `company_street`, `division`
-- `contact_person`, `job_title`, `reference_number`, `subject`
-- `salutation`, `closing`

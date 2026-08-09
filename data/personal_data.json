@@ -1,13 +1,23 @@
 {
-  "name": "Max Mustermann",
-  "street": "Musterstrasse 41",
-  "postal_code": "80331",
-  "city": "Muenchen",
-  "phone": "+49 89 123456",
-  "mobile": "+49 1520 7971234",
-  "email": "max.mustermann@example.com",
-  "birth_date": "1990-02-15",
-  "birth_place": "Muenchen",
-  "marital_status": "ledig",
-  "signing_place": "Muenchen"
+  "required_fields": {
+    "first_name": "Max",
+    "last_name": "Mustermann",
+    "address": "Musterstrasse 41",
+    "postal_code": "80331",
+    "city": "Muenchen",
+    "email": "max.mustermann@example.com"
+  },
+  "optional_fields": {
+    "Telefon": "+49 89 123456",
+    "Geburtsdatum": "1990-02-15",
+    "Geburtsort": "Muenchen",
+    "Familienstand": {
+      "de": "ledig",
+      "en": "single"
+    },
+    "PINA": "123456789"
+  },
+  "additional_information": {
+    "signing_place": "Muenchen"
+  }
 }
