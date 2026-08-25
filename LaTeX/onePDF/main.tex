@@ -1,0 +1,82 @@
+% Shared commands and the single language/metadata source must load before \documentclass.
+\input{../helper/common_commands.tex}
+\input{../src/content_CV.tex}
+\input{../helper/document_options.tex}
+\documentclass[\ApplicationPackageBaseFontSize,a4paper]{article}
+
+% ============================================================
+% SOURCES
+% ============================================================
+\input{../src_personal/personal_data.tex}
+\input{../src/content_cover_letter.tex}
+\input{../src_personal/pdf_paths.tex}
+\input{../src/content_onePDF.tex}
+\input{application_config.tex}
+\input{../helper/style.tex}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage[main=\Language]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+\usepackage{xstring}
+\usepackage{etoolbox}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tocloft}
+\usepackage{xparse}
+
+\geometry{margin=1in}
+\titleformat{\section}{\FontPackageSection}{}{0pt}{}
+\setlist[itemize]{leftmargin=*}
+
+% ============================================================
+% PROJECT ENGINE + DOCUMENT REGISTRY
+% ============================================================
+\input{application_commands.tex}
+\input{application_documents.tex}
+
+% ============================================================
+% TABLE OF CONTENTS STYLE
+% ============================================================
+\setcounter{secnumdepth}{-1}
+\setcounter{tocdepth}{2}
+\renewcommand{\contentsname}{\MyL{Contents}{Inhaltsverzeichnis}}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsecpagefont}{\bfseries}
+\setlength{\cftbeforesecskip}{0.55em}
+\setlength{\cftsecindent}{0pt}
+\setlength{\cftsecnumwidth}{0pt}
+\setlength{\cftsubsecindent}{1.4em}
+\setlength{\cftsubsecnumwidth}{0pt}
+\setlength{\cftbeforesubsecskip}{0.08em}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecleader}{\cftdotfill{\cftdotsep}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdftitle={\ApplicationPDFTitle},
+  pdfauthor={\ApplicantFullName}
+}
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+
+\IfFlag{OnePDF.CoverPage.Visible}{\ApplicationCoverPage}{}
+
+% Separate page-number namespaces avoid duplicate PDF destinations.
+\pagenumbering{roman}
+\IfFlag{OnePDF.StandaloneTOC.Visible}{\tableofcontents\clearpage}{}
+\pagenumbering{arabic}
+
+\RenderOnePDFPackage
+
+\end{document}

@@ -1,0 +1,922 @@
+% ============================================================
+% ACADEMIC CV LAYOUT
+% Independent layout entry point; shares content and helper sources.
+% ============================================================
+% Experimental full tagging (testphase=latest) is intentionally not forced here:
+% with the current table/ActualText layout it can break compilation or degrade
+% ATS text extraction. The PDF still uses PDF management, Unicode mapping and
+% explicit ActualText for ATS-critical fields.
+\input{../helper/common_commands.tex}
+\input{../src/content_CV.tex}
+\input{../helper/document_options.tex}
+\documentclass[\CVBaseFontSize]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[
+    a4paper,
+    left=5mm,
+    right=5mm,
+    top=5mm,
+    bottom=5mm,
+    bindingoffset=0mm,
+    twoside=false
+    ]{geometry}
+\input{../src_personal/personal_data.tex}
+\input{../helper/style.tex}
+% ============================================================
+% AI EDITING BOUNDARY
+% ============================================================
+% Visibility and job-specific content are read from ../src/content_CV.tex.
+% Stable personal and role facts are read from ../src_personal/personal_data.tex.
+% This file is rendering-only.
+\usepackage{tikz}        % for tikzpicture, \clip, \draw, \node
+\usepackage{graphicx}    % for \includegraphics
+\usepackage{microtype}
+\usepackage{colortbl}
+\usepackage{tabularx} % Word-style tab-stop structure for ATS-safe skills
+\usepackage{longtable} % page-breakable ATS-safe CV timeline rows
+\usepackage{needspace} % keep entry heading + first lines together when possible
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{placeins} % keep float-based CV entries in source/visual order
+\usepackage[main=\Language]{babel}
+% \usepackage[main=ngerman, english]{babel}
+% \usepackage[main=english, ngerman]{babel}
+\usetikzlibrary{calc}
+\usepackage[most]{tcolorbox}
+\usepackage{ifthen}
+\usepackage{pdftexcmds}
+% Improve Unicode text extraction for ATS/PDF parsers when using pdfLaTeX.
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage{setspace}
+\usepackage{xstring}
+\usepackage{etoolbox}
+\usepackage[unicode,hidelinks]{hyperref}
+\usepackage{accsupp}    % ATS-readable field labels without changing visible banner text
+
+% \usepackage{showframe}
+%
+% 
+% ============================================================
+% Variables
+% ============================================================
+%
+% \selectlanguage{\Language}
+% --- Document metadata ---
+\title{Curriculum Vitae}
+\author{\ApplicantFullName}
+\date{}
+% --- Content ---
+
+% Shared colors and typography are defined in ../helper/style.tex.
+\def\arc{1ex}
+\def\boxrule{0.2ex}
+%
+% ============================================================
+% ATS-SAFE LAYOUT CONTROL
+% ============================================================
+% All timeline-like sections use one outer geometry:
+%   date/category | decorative vertical rule | content
+% The rule is part of each real content row. There is no artificial bottom
+% extension, so a block with no tasks ends at its last visible text row.
+%
+\newlength{\CVSectionBeforeSpace}
+\newlength{\CVSectionTitleToRuleSpace}
+\newlength{\CVSectionToFirstBlockSpace}
+\newlength{\CVBlockBetweenSpace}
+\newlength{\CVBulletSize}
+\newlength{\CVEntryKeepSpace}
+%
+\setlength{\CVSectionBeforeSpace}{3.0mm}
+\setlength{\CVSectionTitleToRuleSpace}{1.0mm}
+\setlength{\CVSectionToFirstBlockSpace}{2.2mm}
+\setlength{\CVBlockBetweenSpace}{1.6mm}
+% Word template LL_Tabstopp_blaue_Linien.dotx uses a small filled square
+% (Wingdings F0A7).  A geometric square is used here so no Wingdings font is
+% required and the marker contributes no character to ATS text extraction.
+\setlength{\CVBulletSize}{0.55ex}
+% Approximate space required for entry title + organization + first task.
+\setlength{\CVEntryKeepSpace}{5\baselineskip}
+%
+\newcommand{\CVAfterBlock}{\par\addvspace{\CVBlockBetweenSpace}}%
+
+% Remove the artificial depth added by LaTeX's table row strut.
+% This is always used locally inside a surrounding group/environment.
+% The normal strut height is preserved so first-line alignment remains stable,
+% while the table/rule no longer extends below the natural content only
+% because of \dp\strutbox.
+\newcommand{\CVNoRowDepth}{%
+  \setbox\strutbox=\hbox{%
+    \vrule width 0pt height \ht\strutbox depth 0pt%
+  }%
+}%
+% Current timeline color is locally overwritten by each renderer. This makes
+% square task markers automatically use exactly the same color as the rule.
+\providecommand{\CVCurrentTimelineColor}{ThemePrimary}%
+\newcommand{\CVSquareBullet}{%
+  \raisebox{0.16ex}{\textcolor{\CVCurrentTimelineColor}{%
+    \rule{\CVBulletSize}{\CVBulletSize}}}%
+}%
+%
+% Bilingual command \MyL is defined in ../helper/common_commands.tex.
+
+
+% ============================================================
+% PERSONAL DATA
+% Values are kept in a separate file.
+% ============================================================
+
+% Visible PDF text remains unchanged. The ATS/text layer receives a
+% descriptive field name immediately before the corresponding value.
+\newcommand{\ATSField}[2]{%
+    \BeginAccSupp{method=pdfstringdef,unicode,ActualText={#1: #2}}%
+    #2%
+    \EndAccSupp{}%
+}
+
+% Preserve exact punctuation and spacing in the PDF text layer when visible
+% formatting changes (e.g. bold labels) would otherwise make extractors insert
+% spaces before commas or colons.
+\newcommand{\ATSExact}[2]{%
+    \BeginAccSupp{method=pdfstringdef,unicode,ActualText={#1}}%
+    #2%
+    \EndAccSupp{}%
+}
+
+% Searchable PDF metadata; values stay synchronized with personal_data.tex.
+\hypersetup{
+    pdftitle={Curriculum Vitae - \ApplicantFullName},
+    pdfauthor={\ApplicantFullName},
+    pdfsubject={Curriculum Vitae}
+}
+
+\def\meName{%
+    {\huge\ATSField{First name}{\ApplicantFirstName}}\\
+    {\FontCVLastName\ATSField{Last name}{\ApplicantLastName}}%
+}
+
+\def\me{%
+    \normalsize\ATSField{Address}{\ApplicantStreet}\\
+    \normalsize\ATSField{Postal code and city}{\ApplicantPostalCode\space\MyL{\ApplicantCityEN}{\ApplicantCityDE}}\\
+    \normalsize\ATSField{Phone}{\ApplicantPhone}\\
+    \normalsize\ATSField{Email}{\ApplicantEmail}\\
+    \normalsize\ATSField{Date and place of birth}{\ApplicantBirthDate, \MyL{\ApplicantBirthPlaceEN}{\ApplicantBirthPlaceDE}}%
+}
+
+\def\profile{
+    \huge \Value{Profile.Highlight01}\\
+    \huge \Value{Profile.Highlight02}\\
+    \huge \Value{Profile.Highlight03}\\
+    \huge \Value{Profile.Highlight04}\\
+    }
+    
+% ============================================================
+% COMMAND – Section
+% ============================================================
+%
+\newcommand{\mysection}[2]{%
+    % #1 = color
+    % #2 = text
+    % Section rhythm is controlled only by the global variables above.
+    % \addvspace avoids accidental accumulation with the previous block gap.
+    \FloatBarrier
+    \par\addvspace{\CVSectionBeforeSpace}%
+    \noindent
+    {\textcolor{#1}{\FontCVSection\MakeUppercase{#2}}}\par
+    \nobreak
+    \vspace{\CVSectionTitleToRuleSpace}%
+    {\color{#1}\hrule height \boxrule}%
+    \nobreak
+    \vspace{\CVSectionToFirstBlockSpace}%
+}%
+%
+% 
+% ============================================================
+% COMMAND – Activity
+% ============================================================
+%
+%
+% Common parameters
+% Spacing between items
+% itemsep=2pt → space between items
+% parsep=0pt → space within multi-paragraph items
+% Space before/after list
+% topsep=4pt → space above and below the list
+% Indentation / shifting
+% leftmargin=1em → moves list left/right
+% labelsep=0.5em → space between bullet and text
+% labelindent=0pt → extra control of label position
+%
+\setlist[itemize]{label=\CVSquareBullet,itemsep=1pt,topsep=0pt,leftmargin=1.45em,labelsep=0.55em,partopsep=0pt,parsep=0pt}
+%
+% Keep the date and the first content line on exactly the same baseline.
+% The strut gives both table cells the same reference height even when the
+% right-hand text is bold or uses ATS ActualText wrappers.
+\newcommand{\CVDateFirstLine}[1]{{\normalsize\strut #1}}
+\newcommand{\CVContentFirstLine}[1]{{\strut #1}}
+%
+\newcommand{\activity}[8]{%
+% #1 date start, #2 date end, #3 title, #4 department/grade,
+% #5 institution, #6 city, #7 activity content, #8 color
+  \begingroup
+  \def\CVCurrentTimelineColor{#8}%
+  \hyphenpenalty=10000
+  \exhyphenpenalty=10000
+  \emergencystretch=1.5em
+  \Needspace{\CVEntryKeepSpace}%
+  \setlength{\LTleft}{0pt}%
+  \setlength{\LTright}{0pt}%
+  \setlength{\LTpre}{0pt}%
+  \setlength{\LTpost}{0pt}%
+  \renewcommand{\arraystretch}{1.0}%
+  \CVNoRowDepth
+  \begin{longtable}{@{}
+      p{\CVDateColumnWidth}
+      @{\hspace{\CVDateToRuleGap}\color{\CVCurrentTimelineColor}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+      >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+    @{}}
+    \CVDateFirstLine{#1 -- #2} &
+    \CVContentFirstLine{\ATSExact{#3, #4}{\textbf{#3}, #4}}\par
+    {\normalsize #5, #6}\par
+    {\normalsize #7}\tabularnewline
+  \end{longtable}%
+  \CVAfterBlock
+  \endgroup
+}%
+
+% Professional-experience renderer. The complete task list is rendered
+% directly inside the right-hand content cell below the company line.
+% No additional task-row or outer bullet wrapper is used.
+\newcommand{\professionalactivity}[9]{%
+  \begingroup
+  \def\CVCurrentTimelineColor{#9}%
+  \hyphenpenalty=10000
+  \exhyphenpenalty=10000
+  \emergencystretch=1.5em
+  \IfStrEq{#5}{#6}{%
+    \def\EmploymentCompanyLine{%
+      {\normalsize
+       \ATSExact{\MyL{Employer}{Arbeitgeber}: #5; \MyL{Location}{Ort}: #7}{%
+         \textbf{#5}, #7}}%
+    }%
+  }{%
+    \def\EmploymentCompanyLine{%
+      {\normalsize
+       \ATSExact{\MyL{Contractual employer}{Vertraglicher Arbeitgeber}: #5; \MyL{Operational company}{Einsatzunternehmen}: #6; \MyL{Location}{Ort}: #7}{%
+         \textbf{#5}, \MyL{assignment at}{Einsatz bei} #6, #7}}%
+    }%
+  }%
+  \Needspace{\CVEntryKeepSpace}%
+  \setlength{\LTleft}{0pt}%
+  \setlength{\LTright}{0pt}%
+  \setlength{\LTpre}{0pt}%
+  \setlength{\LTpost}{0pt}%
+  \renewcommand{\arraystretch}{1.0}%
+  \CVNoRowDepth
+  \begin{longtable}{@{}
+      p{\CVDateColumnWidth}
+      @{\hspace{\CVDateToRuleGap}\color{\CVCurrentTimelineColor}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+      >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+    @{}}
+    \CVDateFirstLine{#1 -- #2} &
+    \CVContentFirstLine{\ATSExact{#3, #4}{\textbf{#3}, #4}}\par
+    \EmploymentCompanyLine\par
+    #8%
+    \tabularnewline
+  \end{longtable}%
+  \CVAfterBlock
+  \endgroup
+}%
+%
+% 
+% ============================================================
+% COMMAND – Skill bars (circle style)
+% ============================================================
+%
+\newcommand{\skill}[3][ThemeBlueDark]{%
+  % \noindent
+  \begin{tikzpicture}[baseline=(label.base)]
+    \pgfmathsetlengthmacro{\R}{0.5ex}
+    \pgfmathsetlengthmacro{\D}{2.2ex}
+
+    \node[anchor=west, text width=0.65\linewidth] (label) at (0,0) {#2};
+    \coordinate (c) at ($(label.east)+(0.6ex,0)$);
+
+    \foreach \i in {1,...,4}{
+      \draw[fill=ThemeGray80!8,draw=ThemeGray80!15]
+        ($(c)+(\i*\D,0)$) circle (\R);
+    }
+
+    \ifnum#3>0\relax
+      \foreach \i in {1,...,#3}{
+        \fill[fill=#1]
+          ($(c)+(\i*\D,0)$) circle (\R);
+      }
+    \fi
+  \end{tikzpicture}%
+}
+%
+\newcommand{\skillleveltext}[1]{%
+  \ifdefstring{\Language}{english}{%
+    \ifnum#1=1 Beginner%
+    \else\ifnum#1=2 Basic%
+    \else\ifnum#1=3 Intermediate%
+    \else\ifnum#1=4 Advanced%
+    \else\ifnum#1=5 Fluent%
+    \else\ifnum#1=6 Native~speaker%
+    \else Unknown%
+    \fi\fi\fi\fi\fi\fi
+  }{%
+    \ifdefstring{\Language}{ngerman}{%
+      \ifnum#1=1 Anfänger%
+      \else\ifnum#1=2 Grundkenntnisse%
+      \else\ifnum#1=3 Gute~Kenntnisse%
+      \else\ifnum#1=4 Fließend%
+      \else\ifnum#1=5 Verhandlungssicher%
+      \else\ifnum#1=6 Muttersprache%
+      \else Unbekannt%
+      \fi\fi\fi\fi\fi\fi
+    }{%
+      Unknown%
+    }%
+  }%
+}
+
+% #1 English name, #2 German name, #3 integer level
+%
+% In the skills section, language/tool entries are rendered using the same
+% three-tab-stop logic as LL_Tabstopp_blaue_Linien.dotx:
+%   category | skill | level
+% The content remains one logical top-to-bottom stream for ATS extraction.
+\newlength{\CVSkillGroupWidth}
+% Left edge of every skill-level label, measured from the beginning of the
+% right-hand skill content column. Change only this value to move all levels.
+\newlength{\CVSkillLevelStart}
+\newlength{\CVSkillCategoryToRuleGap}
+\newlength{\CVSkillRuleToSkillGap}
+\newlength{\CVSkillCategoryColumnWidth}
+\setlength{\CVSkillGroupWidth}{170.10bp}
+% Levels are LEFT-aligned at one common position (roughly page centre).
+\setlength{\CVSkillLevelStart}{62mm}
+% Keep the Word tab stop for the beginning of the skill column. The blue
+% separator sits inside the category area, so adding the line does not move
+% the skill text to the right.
+\setlength{\CVSkillCategoryToRuleGap}{2mm}
+\setlength{\CVSkillRuleToSkillGap}{2.5mm}
+\setlength{\CVSkillCategoryColumnWidth}{%
+  \dimexpr\CVSkillGroupWidth-\CVSkillCategoryToRuleGap-\boxrule-\CVSkillRuleToSkillGap\relax}
+
+\makeatletter
+\newcommand{\CVConsumeSkillComma}{%
+  \@ifnextchar,{\@gobble}{}%
+}
+\makeatother
+
+\newcommand{\CVSkillTabRow}[2]{%
+  % One logical source row for ATS; only the visual start position of #2 is
+  % controlled. Both fields remain ordinary searchable PDF text.
+  \par\noindent
+  \makebox[\CVSkillLevelStart][l]{#1}%
+  \makebox[\dimexpr\linewidth-\CVSkillLevelStart\relax][l]{#2}%
+  \par
+}
+
+\newcommand{\langskill}[3]{%
+  \CVSkillTabRow{\MyL{#1}{#2}}{\skillleveltext{#3}}%
+  \CVConsumeSkillComma
+}
+%
+% Skill level text (4 levels)
+\newcommand{\skilllevel}[1]{%
+  \ifdefstring{\Language}{english}{%
+    \ifnum#1=1 Basic%
+    \else\ifnum#1=2 Intermediate%
+    \else\ifnum#1=3 Advanced%
+    \else\ifnum#1=4 Expert%
+    \else Unknown%
+    \fi\fi\fi\fi
+  }{%
+    \ifdefstring{\Language}{ngerman}{%
+      \ifnum#1=1 Grundkenntnisse%
+      \else\ifnum#1=2 Gute~Kenntnisse%
+      \else\ifnum#1=3 Fortgeschritten%
+      \else\ifnum#1=4 Experte%
+      \else Unbekannt%
+      \fi\fi\fi\fi
+    }{%
+      Unknown%
+    }%
+  }%
+}
+
+% #1 English name, #2 German name, #3 integer level
+\newcommand{\skillW}[3]{%
+  \CVSkillTabRow{\MyL{#1}{#2}}{\skilllevel{#3}}%
+  \CVConsumeSkillComma
+}
+%
+% =========================
+% Skill Set Renderer
+% =========================
+%
+% #1 group name, #2 skill list
+% The first tab stop is the Word-template category column. Rated skills
+% generated with \skillW / \langskill use the second and third tab stops.
+% Unrated method/format lists use the complete right-hand text area.
+\newcommand{\SkillSetBlock}[2]{%
+  \begingroup
+  \def\CVCurrentTimelineColor{ThemePrimary}%
+  \CVNoRowDepth
+  \par\noindent
+  \begin{tabularx}{\linewidth}{@{}
+      p{\CVDateColumnWidth}
+      @{\hspace{\CVDateToRuleGap}\color{\CVCurrentTimelineColor}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+      >{\raggedright\arraybackslash}X
+    @{}}
+    \textbf{#1} & #2\tabularnewline
+  \end{tabularx}%
+  \CVAfterBlock
+  \endgroup
+}
+%
+% === START DOCUMENT ===
+%
+\begin{document}
+%
+% ============================================================
+% ===== HEADER =====
+% ============================================================
+%
+\newlength{\xPad}
+\newlength{\yPad}
+\newlength{\ImgH}
+\newlength{\BannerH}
+\newlength{\AfterBannerH}
+\newlength{\PersonalTextGap}
+\newlength{\BannerTextEdgeGap}
+\newlength{\ApplicantLastNameOpticalShift}
+\newlength{\ProfileRightGap}
+\newlength{\ProfileBottomEdgeGap}
+\newlength{\CVSeparatorPosition}
+\newlength{\CVDateToRuleGap}
+\newlength{\CVRuleToContentGap}
+\newlength{\CVDateColumnWidth}
+\newlength{\CVContentColumnWidth}
+\newsavebox{\ProfilePhotoBox}
+%
+\setlength{\xPad}{4mm}
+\setlength{\yPad}{3mm}
+\setlength{\ImgH}{45mm}
+\setlength{\BannerH}{\dimexpr \ImgH + 2\yPad \relax}
+\setlength{\AfterBannerH}{\dimexpr \BannerH - 3\yPad + 2mm \relax}
+% Horizontal distance between the right edge of the photo and personal data.
+% Change only this value to move the whole personal-data block horizontally.
+\setlength{\PersonalTextGap}{5mm}
+% Shared top/bottom inset for both banner text blocks.
+\setlength{\BannerTextEdgeGap}{1.2mm}
+% Small optical correction for the large last-name glyph at 34 pt.
+\setlength{\ApplicantLastNameOpticalShift}{0mm}
+% Right edge of profile highlights mirrors the photo's left page inset.
+\setlength{\ProfileRightGap}{\dimexpr \xPad - 0.5mm\relax}
+% Optical bottom correction so the last profile line visually reaches the
+% same lower boundary as the last personal-data line.
+\setlength{\ProfileBottomEdgeGap}{0.5mm}
+
+% Measure the actual photo width at the selected height.  This lets all
+% non-Skills vertical separators share the personal-data block's x-position.
+\sbox{\ProfilePhotoBox}{\includegraphics[height=\ImgH,keepaspectratio]{\ApplicantPhotoFile}}
+% Geometry uses a 5 mm left margin. CVSeparatorPosition is relative to the
+% normal text area's left edge; its absolute page x equals personaltext.west.
+\setlength{\CVSeparatorPosition}{%
+    \dimexpr \xPad + \wd\ProfilePhotoBox + \PersonalTextGap - 5mm\relax}
+\setlength{\CVDateToRuleGap}{2mm}
+\setlength{\CVRuleToContentGap}{2.5mm}
+\setlength{\CVDateColumnWidth}{%
+    \dimexpr \CVSeparatorPosition - \CVDateToRuleGap\relax}
+\setlength{\CVContentColumnWidth}{%
+    \dimexpr \linewidth - \CVSeparatorPosition - \boxrule - \CVRuleToContentGap\relax}
+%
+\begin{tikzpicture}[remember picture,overlay]
+    % Filled top field
+    \fill[ThemePrimary]
+        (current page.north west)
+        rectangle
+        ([yshift=-\BannerH]current page.north east);
+    
+    % Left picture node (rectangular)
+    \node[anchor=north west, inner sep=0pt]
+        (pic)
+        at ([xshift=\xPad,yshift=-\yPad]current page.north west)
+        {
+        \ifdefempty{\MyBlanc}
+            {}
+            {\usebox{\ProfilePhotoBox}}
+        };
+
+    % Personal data: one logical ATS text block with exactly the same
+    % vertical extent as the photo. Each line keeps its natural font height;
+    % TeX distributes only the remaining space between the lines.
+    \node[
+        anchor=north west,
+        text=ThemeWhite,
+        align=left,
+        inner sep=0pt,
+        font=\sffamily\bfseries
+    ] (personaltext)
+        at ([xshift=\PersonalTextGap]pic.north east)
+    {
+        \ifdefempty{\MyBlanc}
+            {}
+            {%
+            \vbox to \ImgH{%
+                \vspace*{\BannerTextEdgeGap}%
+                \hbox{{\huge\ATSField{First name}{\ApplicantFirstName}}}%
+                \vfill
+                \hbox{\hspace*{\ApplicantLastNameOpticalShift}{\FontCVLastName
+                    \ATSField{Last name}{\ApplicantLastName}}}%
+                \vfill
+                \hbox{{\normalsize\ATSField{Address}{\ApplicantStreet}}}%
+                \vfill
+                \hbox{{\normalsize
+                    \ATSField{Postal code and city}{\ApplicantPostalCode\space\MyL{\ApplicantCityEN}{\ApplicantCityDE}}}}%
+                \vfill
+                \hbox{{\normalsize\ATSField{Phone}{\ApplicantPhone}}}%
+                \vfill
+                \hbox{{\normalsize\ATSField{Email}{\ApplicantEmail}}}%
+                \vfill
+                \hbox{{\normalsize
+                    \ATSField{Date and place of birth}{\ApplicantBirthDate, \MyL{\ApplicantBirthPlaceEN}{\ApplicantBirthPlaceDE}}}}%
+                \vspace*{\BannerTextEdgeGap}%
+            }%
+            }
+    };
+    
+    % \node[
+    %     anchor=north east,
+    %     text=ThemeWhite,
+    %     inner sep=0pt,
+    %     font=\sffamily\bfseries
+    % ] (text2)
+    %     at ([xshift=-\ProfileRightGap,yshift=-\yPad]current page.north east)
+    % {
+    %     \vbox to \ImgH{%
+    %         \vspace*{\BannerTextEdgeGap}%
+    %         \hbox to 0.65\paperwidth{\hfil
+    %             {\huge\ATSField{\MyL{Profile highlight 1}{Profil-Highlight 1}}{\Value{Profile.Highlight01}}}}%
+    %         \vfill
+    %         \hbox to 0.65\paperwidth{\hfil
+    %             {\huge\ATSField{\MyL{Profile highlight 2}{Profil-Highlight 2}}{\Value{Profile.Highlight02}}}}%
+    %         \vfill
+    %         \hbox to 0.65\paperwidth{\hfil
+    %             {\huge\ATSField{\MyL{Profile highlight 3}{Profil-Highlight 3}}{\Value{Profile.Highlight03}}}}%
+    %         \vfill
+    %         \hbox to 0.65\paperwidth{\hfil
+    %             {\huge\ATSField{\MyL{Profile highlight 4}{Profil-Highlight 4}}{\Value{Profile.Highlight04}}}}%
+    %         \vspace*{\ProfileBottomEdgeGap}%
+    %     }%
+    % };
+\end{tikzpicture}\par
+%
+%
+\vspace*{\AfterBannerH}
+%
+%
+% ============================================================
+% Profile
+% This section is optional and if you choose to have one it should be customized to each job application. Stick to these guidelines: http://theinterviewguys.com/resume-summary-examples.
+% ============================================================
+%
+% \begin{center}
+%     \begin{tcolorbox}[
+%         width= 1. \linewidth,
+%         colback=ThemePrimary!5,
+%         colframe=ThemePrimary,
+%         arc=\arc,
+%         boxrule=2pt,
+%         halign=center,
+%         valign=center
+%         ]
+%         {\textcolor{ThemeBlack}{
+% 			{\fontsize{12pt}{14pt}\selectfont{\textbf{\profile}}}
+% 			}
+%         }
+%     \end{tcolorbox}
+% \end{center}
+%
+%
+%
+%
+%
+\ifnum\Flag{Section.Education}=1\relax
+\mysection{ThemePrimary}{\MyL{Education}{Ausbildung}}
+
+% AI EDUCATION 03 | newest education entry
+\ifnum\Flag{Education03.Visible}=1\relax
+\activity{\Value{Education03.Start}}{\Value{Education03.End}}
+{\MyL{\Value{Education03.TitleEN}}{\Value{Education03.TitleDE}}}
+{\MyL{\Value{Education03.GradeEN}}{\Value{Education03.GradeDE}}}
+{\Value{Education03.Institution}}{\MyL{\Value{Education03.LocationEN}}{\Value{Education03.LocationDE}}}
+{%
+\begin{itemize}
+  \item \MyL{\Value{Education03.CourseEN}}{\Value{Education03.CourseDE}}
+  \item \MyL{Main subject:}{Schwerpunkte:}~\Value{Education03.MainSubjects}
+  \item \ATSExact{\MyL{Thesis}{Masterarbeit}:}{\MyL{Thesis}{Masterarbeit}:}~\MyL{\Value{Education03.ThesisEN}}{\Value{Education03.ThesisDE}}
+  \item \ATSExact{\MyL{Term paper}{Semesterarbeit}:}{\MyL{Term paper}{Semesterarbeit}:}~\MyL{\Value{Education03.TermPaperEN}}{\Value{Education03.TermPaperDE}}
+\end{itemize}%
+}{ThemePrimary}%
+\fi
+
+% AI EDUCATION 02
+\ifnum\Flag{Education02.Visible}=1\relax
+\activity{\Value{Education02.Start}}{\Value{Education02.End}}
+{\MyL{\Value{Education02.TitleEN}}{\Value{Education02.TitleDE}}}
+{\MyL{\Value{Education02.GradeEN}}{\Value{Education02.GradeDE}}}
+{\Value{Education02.Institution}}{\MyL{\Value{Education02.LocationEN}}{\Value{Education02.LocationDE}}}
+{%
+\begin{itemize}
+  \item \MyL{\Value{Education02.CourseEN}}{\Value{Education02.CourseDE}}
+  \item \MyL{Main subject:}{Schwerpunkte:}~\Value{Education02.MainSubjects}
+  \item \ATSExact{\MyL{Thesis}{Bachelorarbeit}:}{\MyL{Thesis}{Bachelorarbeit}:}~\MyL{\Value{Education02.ThesisEN}}{\Value{Education02.ThesisDE}}
+\end{itemize}%
+}{ThemePrimary}%
+\fi
+
+% AI EDUCATION 01 | oldest education entry
+\ifnum\Flag{Education01.Visible}=1\relax
+\activity{\Value{Education01.Start}}{\Value{Education01.End}}
+{\MyL{\Value{Education01.TitleEN}}{\Value{Education01.TitleDE}}}
+{\MyL{\Value{Education01.GradeEN}}{\Value{Education01.GradeDE}}}
+{\Value{Education01.Institution}}{\MyL{\Value{Education01.LocationEN}}{\Value{Education01.LocationDE}}}
+{\MyL{\Value{Education01.SubjectsEN}}{\Value{Education01.SubjectsDE}}}
+{ThemePrimary}%
+\fi
+\fi % Section.Education
+\ifnum\Flag{Section.ProfessionalExperience}=1\relax
+\mysection{ThemePrimary}{\MyL{Professional Experience}{Berufserfahrung}}
+
+% AI PROFESSIONAL ROLES
+% Stable chronology: Role01 = oldest, Role06 = newest.
+% Metadata is read from ../src_personal/personal_data.tex.
+% Job-specific task lists are read from ../src/content_CV.tex.
+
+% AI ROLE 06 | newest
+\ifnum\Flag{Role06.Visible}=1\relax
+\professionalactivity{\Value{Role06.Start}}{\Value{Role06.End}}
+{\MyL{\Value{Role06.TitleEN}}{\Value{Role06.TitleDE}}}
+{\MyL{\Value{Role06.AreaEN}}{\Value{Role06.AreaDE}}}
+{\Value{Role06.Employer}}{\Value{Role06.OperationalCompany}}
+{\MyL{\Value{Role06.LocationEN}}{\Value{Role06.LocationDE}}}
+{\ifnum\Flag{Role06.TasksVisible}=1\relax\Value{Role06.Tasks}\fi}{ThemePrimary}%
+\fi
+
+% AI ROLE 05
+\ifnum\Flag{Role05.Visible}=1\relax
+\professionalactivity{\Value{Role05.Start}}{\Value{Role05.End}}
+{\MyL{\Value{Role05.TitleEN}}{\Value{Role05.TitleDE}}}
+{\MyL{\Value{Role05.AreaEN}}{\Value{Role05.AreaDE}}}
+{\Value{Role05.Employer}}{\Value{Role05.OperationalCompany}}
+{\MyL{\Value{Role05.LocationEN}}{\Value{Role05.LocationDE}}}
+{\ifnum\Flag{Role05.TasksVisible}=1\relax\Value{Role05.Tasks}\fi}{ThemePrimary}%
+\fi
+
+% AI ROLE 04
+\ifnum\Flag{Role04.Visible}=1\relax
+\professionalactivity{\Value{Role04.Start}}{\Value{Role04.End}}
+{\MyL{\Value{Role04.TitleEN}}{\Value{Role04.TitleDE}}}
+{\MyL{\Value{Role04.AreaEN}}{\Value{Role04.AreaDE}}}
+{\Value{Role04.Employer}}{\Value{Role04.OperationalCompany}}
+{\MyL{\Value{Role04.LocationEN}}{\Value{Role04.LocationDE}}}
+{\ifnum\Flag{Role04.TasksVisible}=1\relax\Value{Role04.Tasks}\fi}{ThemePrimary}%
+\fi
+
+% AI ROLE 03
+\ifnum\Flag{Role03.Visible}=1\relax
+\professionalactivity{\Value{Role03.Start}}{\Value{Role03.End}}
+{\MyL{\Value{Role03.TitleEN}}{\Value{Role03.TitleDE}}}
+{\MyL{\Value{Role03.AreaEN}}{\Value{Role03.AreaDE}}}
+{\Value{Role03.Employer}}{\Value{Role03.OperationalCompany}}
+{\MyL{\Value{Role03.LocationEN}}{\Value{Role03.LocationDE}}}
+{\ifnum\Flag{Role03.TasksVisible}=1\relax\Value{Role03.Tasks}\fi}{ThemePrimary}%
+\fi
+
+% AI ROLE 02
+\ifnum\Flag{Role02.Visible}=1\relax
+\professionalactivity{\Value{Role02.Start}}{\Value{Role02.End}}
+{\MyL{\Value{Role02.TitleEN}}{\Value{Role02.TitleDE}}}
+{\MyL{\Value{Role02.AreaEN}}{\Value{Role02.AreaDE}}}
+{\Value{Role02.Employer}}{\Value{Role02.OperationalCompany}}
+{\MyL{\Value{Role02.LocationEN}}{\Value{Role02.LocationDE}}}
+{\ifnum\Flag{Role02.TasksVisible}=1\relax\Value{Role02.Tasks}\fi}{ThemePrimary}%
+\fi
+
+% AI ROLE 01 | oldest
+\ifnum\Flag{Role01.Visible}=1\relax
+\professionalactivity{\Value{Role01.Start}}{\Value{Role01.End}}
+{\MyL{\Value{Role01.TitleEN}}{\Value{Role01.TitleDE}}}
+{\MyL{\Value{Role01.AreaEN}}{\Value{Role01.AreaDE}}}
+{\Value{Role01.Employer}}{\Value{Role01.OperationalCompany}}
+{\MyL{\Value{Role01.LocationEN}}{\Value{Role01.LocationDE}}}
+{\ifnum\Flag{Role01.TasksVisible}=1\relax\Value{Role01.Tasks}\fi}{ThemePrimary}%
+\fi
+
+\noindent
+\fi % CVShowProfessionalExperience
+
+% ============================================================
+% PUBLICATIONS
+% ============================================================
+%
+\ifnum\Flag{Section.Publications}=1\relax
+\mysection{ThemePrimary}{\MyL{Publications}{Publikationen}}
+\begin{table}[h!]
+  \CVNoRowDepth
+  \centering
+  \begin{tabular}{@{}
+      p{\CVDateColumnWidth}
+      @{\hspace{\CVDateToRuleGap}\color{ThemePrimary}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+      >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+  @{}}
+    \ifnum\Flag{Publication01.Visible}=1\relax
+      \CVDateFirstLine{\MyL{\Value{Publication01.StatusEN}}{\Value{Publication01.StatusDE}}} &
+      \CVContentFirstLine{\MyL{\Value{Publication01.TitleEN}}{\Value{Publication01.TitleDE}}}\\
+    \fi
+    \vspace{2mm}
+  \end{tabular}
+\end{table}
+\noindent\par
+\fi % Section.Publications
+
+% ============================================================
+% PROJECTS
+% ============================================================
+\ifnum\Flag{Section.Projects}=1\relax
+\mysection{ThemePrimary}{\MyL{Projects}{Projekte}}
+\begingroup
+  \hyphenpenalty=10000
+  \exhyphenpenalty=10000
+  \emergencystretch=1.5em
+
+  \newcommand{\CVProjectEntry}[1]{%
+    \begingroup
+    \def\CVCurrentTimelineColor{ThemePrimary}%
+    \Needspace{4\baselineskip}%
+    \setlength{\LTleft}{0pt}%
+    \setlength{\LTright}{0pt}%
+    \setlength{\LTpre}{0pt}%
+    \setlength{\LTpost}{0pt}%
+    \CVNoRowDepth
+    \begin{longtable}{@{}
+      p{\CVDateColumnWidth}
+      @{\hspace{\CVDateToRuleGap}\color{\CVCurrentTimelineColor}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+      >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+    @{}}
+      \CVDateFirstLine{\Value{#1.Date}} &
+      \CVContentFirstLine{\ATSExact{\MyL{\Value{#1.TypeEN}}{\Value{#1.TypeDE}}, \MyL{\Value{#1.InstitutionEN}}{\Value{#1.InstitutionDE}}, \MyL{\Value{#1.LocationEN}}{\Value{#1.LocationDE}}}{%
+        \textbf{\MyL{\Value{#1.TypeEN}}{\Value{#1.TypeDE}}}, \MyL{\Value{#1.InstitutionEN}}{\Value{#1.InstitutionDE}}, \MyL{\Value{#1.LocationEN}}{\Value{#1.LocationDE}}}}\par
+      \MyL{\Value{#1.DescriptionEN}}{\Value{#1.DescriptionDE}}\tabularnewline
+    \end{longtable}%
+    \CVAfterBlock
+    \endgroup
+  }
+
+  \ifnum\Flag{Project01.Visible}=1\relax\CVProjectEntry{Project01}\fi
+  \ifnum\Flag{Project02.Visible}=1\relax\CVProjectEntry{Project02}\fi
+  \ifnum\Flag{Project03.Visible}=1\relax\CVProjectEntry{Project03}\fi
+  \ifnum\Flag{Project04.Visible}=1\relax\CVProjectEntry{Project04}\fi
+\endgroup
+\noindent\par
+\fi % Section.Projects
+
+% ============================================================
+% SKILLS
+% ============================================================
+%
+% ATS-safe Word tab-stop layout based on LL_Tabstopp_blaue_Linien.dotx:
+%   category | skill | level
+% No parallel left/right skill columns. Each category has one blue vertical
+% separator before its skill list; the separator uses the same ThemePrimary and
+% rule thickness as the earlier CV separators. Source order remains identical
+% to the intended ATS reading order.
+%
+\ifnum\Flag{Section.Skills}=1\relax
+\mysection{ThemePrimary}{\MyL{Skills}{Kenntnisse}}
+\begingroup
+    \setlength{\tabcolsep}{0pt}%
+    \renewcommand{\arraystretch}{1.0}%
+    \raggedright
+    \hyphenpenalty=10000
+    \exhyphenpenalty=10000
+    \emergencystretch=2em
+
+    \ifnum\Flag{Skill.Languages}=1\relax
+    \SkillSetBlock{\MyL{Languages}{Sprachen}}{%
+      \langskill{\Value{LanguageSkill01.NameEN}}{\Value{LanguageSkill01.NameDE}}{\Value{LanguageSkill01.Level}},
+      \langskill{\Value{LanguageSkill02.NameEN}}{\Value{LanguageSkill02.NameDE}}{\Value{LanguageSkill02.Level}},
+      \langskill{\Value{LanguageSkill03.NameEN}}{\Value{LanguageSkill03.NameDE}}{\Value{LanguageSkill03.Level}}%
+    }%
+    \fi
+
+    \ifnum\Flag{Skill.Set01}=1\relax\Value{Skill.Set01.Content}\fi
+    \ifnum\Flag{Skill.Set02}=1\relax\Value{Skill.Set02.Content}\fi
+    \ifnum\Flag{Skill.Set03}=1\relax\Value{Skill.Set03.Content}\fi
+    \ifnum\Flag{Skill.Set04}=1\relax\Value{Skill.Set04.Content}\fi
+    \ifnum\Flag{Skill.Set05}=1\relax\Value{Skill.Set05.Content}\fi
+    \ifnum\Flag{Skill.Set06}=1\relax\Value{Skill.Set06.Content}\fi
+    \ifnum\Flag{Skill.Set07}=1\relax\Value{Skill.Set07.Content}\fi
+    \ifnum\Flag{Skill.Set08}=1\relax\Value{Skill.Set08.Content}\fi
+    \ifnum\Flag{Skill.Set09}=1\relax\Value{Skill.Set09.Content}\fi
+    \ifnum\Flag{Skill.Set10}=1\relax\Value{Skill.Set10.Content}\fi
+\endgroup
+\par
+%
+%
+\fi % CVShowSkills
+%
+% ============================================================
+% EXTRA-CURRICULAR
+% ============================================================
+%
+\ifnum\Flag{Section.ExtraCurricular}=1\relax
+\mysection{ThemePrimary}{\MyL{Extra-Curricular}{Ehrenamtliches Engagement}}
+\begin{table}[h!]
+  \CVNoRowDepth
+  \centering
+  \begin{tabular}{@{}
+    p{\CVDateColumnWidth}
+    @{\hspace{\CVDateToRuleGap}\color{ThemePrimary}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+    >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+  @{}}
+    \ifnum\Flag{Activity01.Visible}=1\relax
+      \CVDateFirstLine{\Value{Activity01.Date}} &
+      \CVContentFirstLine{\ATSExact{\MyL{\Value{Activity01.RoleEN}}{\Value{Activity01.RoleDE}}, \Value{Activity01.Organisation}, \MyL{\Value{Activity01.LocationEN}}{\Value{Activity01.LocationDE}}: \MyL{\Value{Activity01.DescriptionEN}}{\Value{Activity01.DescriptionDE}}}{%
+        \textbf{\MyL{\Value{Activity01.RoleEN}}{\Value{Activity01.RoleDE}}}, \Value{Activity01.Organisation}, \MyL{\Value{Activity01.LocationEN}}{\Value{Activity01.LocationDE}}: \MyL{\Value{Activity01.DescriptionEN}}{\Value{Activity01.DescriptionDE}}}}\\
+    \fi
+    \ifnum\Flag{Activity02.Visible}=1\relax
+      \CVDateFirstLine{\Value{Activity02.Date}} &
+      \CVContentFirstLine{\ATSExact{\MyL{\Value{Activity02.RoleEN}}{\Value{Activity02.RoleDE}}, \Value{Activity02.Organisation}, \MyL{\Value{Activity02.LocationEN}}{\Value{Activity02.LocationDE}}: \MyL{\Value{Activity02.DescriptionEN}}{\Value{Activity02.DescriptionDE}}}{%
+        \textbf{\MyL{\Value{Activity02.RoleEN}}{\Value{Activity02.RoleDE}}}, \Value{Activity02.Organisation}, \MyL{\Value{Activity02.LocationEN}}{\Value{Activity02.LocationDE}}: \MyL{\Value{Activity02.DescriptionEN}}{\Value{Activity02.DescriptionDE}}}}\\
+    \fi
+    \vspace{2mm}
+  \end{tabular}
+\end{table}
+\noindent\par
+\fi % Section.ExtraCurricular
+
+% ============================================================
+% INTERESTS
+% ============================================================
+%
+\ifnum\Flag{Section.Interests}=1\relax
+\mysection{ThemePrimary}{\MyL{Interests}{Interessen}}
+\begin{table}[h!]
+  \CVNoRowDepth
+  \centering
+  \begin{tabular}{@{}
+    p{\CVDateColumnWidth}
+    @{\hspace{\CVDateToRuleGap}\color{ThemePrimary}\vrule width \boxrule\hspace{\CVRuleToContentGap}}
+    >{\raggedright\arraybackslash}p{\CVContentColumnWidth}
+  @{}}
+    \ifnum\Flag{Interest01.Visible}=1\relax
+      & \textbf{\MyL{\Value{Interest01.TitleEN}}{\Value{Interest01.TitleDE}}}\par
+      \MyL{\Value{Interest01.DescriptionEN}}{\Value{Interest01.DescriptionDE}}\\
+    \fi
+    \ifnum\Flag{Interest02.Visible}=1\relax
+      & \textbf{\MyL{\Value{Interest02.TitleEN}}{\Value{Interest02.TitleDE}}}\par
+      \MyL{\Value{Interest02.DescriptionEN}}{\Value{Interest02.DescriptionDE}}\\
+    \fi
+    \ifnum\Flag{Interest03.Visible}=1\relax
+      & \textbf{\MyL{\Value{Interest03.TitleEN}}{\Value{Interest03.TitleDE}}}\par
+      \MyL{\Value{Interest03.DescriptionEN}}{\Value{Interest03.DescriptionDE}}
+    \fi
+    \vspace{2mm}
+  \end{tabular}
+\end{table}
+\noindent\par
+\fi % Section.Interests
+
+% ============================================================
+% SIGNATURE
+% ============================================================
+% Signature is intentionally outside all section booleans.
+%
+\begin{tikzpicture}[remember picture,overlay]
+    \node[
+        anchor=south east,
+        xshift=1cm,
+        yshift=1.5cm
+        ] at (current page.south east) {%
+        \begin{tabular}{p{0.55\textwidth} p{0.45\textwidth}}
+            & \includegraphics[height=1.8cm]{\ApplicantSignatureFile} \\[-10mm]
+            & \rule{7cm}{0.4pt} \\
+            & \ATSExact{\MyL{\ApplicantCityEN}{\ApplicantCityDE}, \today}{\MyL{\ApplicantCityEN}{\ApplicantCityDE}, \today}
+        \end{tabular}
+        };
+\end{tikzpicture}
+%
+%
+%
+% === END DOCUMENT ===
+%
+% {\fontsize{1pt}{1pt}\selectfont\color{white}\atsKeywords}%
+%
+\end{document}

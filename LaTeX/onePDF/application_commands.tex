@@ -1,0 +1,468 @@
+% ============================================================
+% APPLICATION PACKAGE ENGINE
+% Read-only for job-specific generators. Reusable rendering commands only.
+% ============================================================
+
+% Shared bilingual command \MyL is defined in ../helper/common_commands.tex.
+
+% ------------------------------------------------------------
+% WRAPPER PAGE NUMBERS
+% The page counter is still used internally for TOC destinations, but no page
+% number is printed when OnePDF.GeneratedPageNumbers.Visible = 0.
+% This does not alter page numbers already embedded in source PDFs.
+% ------------------------------------------------------------
+\ifnum\Flag{OnePDF.GeneratedPageNumbers.Visible}=1\relax
+  \pagestyle{plain}
+\else
+  \pagestyle{empty}
+\fi
+
+% ------------------------------------------------------------
+% COMBINED COVER PAGE + TABLE OF CONTENTS
+% The separate TOC switch in ../src/content_onePDF.tex stays false because the
+% TOC is rendered directly on this first page. Compile twice after structural
+% or document-selection changes.
+% ------------------------------------------------------------
+\newcommand{\ApplicationCoverPage}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    \vspace*{1.0cm}
+
+    {\Huge\textbf{\ApplicantFullName}\par}
+    \vspace{0.75cm}
+
+    {\Large\textbf{\MyL{Application}{Bewerbung}}\par}
+    \vspace{0.25cm}
+
+    {\Large
+      \ApplicationPosition\par
+    }
+
+    \vspace{0.55cm}
+
+    {\large
+      \ApplicationOrganisation\par
+      \ApplicationDepartment\par
+    }
+
+    \IfStrEq{\ApplicationReference}{}{}{%
+      \vspace{0.25cm}
+      {\normalsize
+        \MyL{Reference}{Referenz}: \ApplicationReference\par
+      }
+    }
+
+    \vspace{0.85cm}
+
+    \begin{minipage}{0.90\textwidth}
+      \raggedright
+      \tableofcontents
+    \end{minipage}
+
+    % \tableofcontents may switch the current page to the plain page style.
+    % Force the combined cover/TOC page back to empty so no wrapper page
+    % number is printed.
+    \thispagestyle{empty}
+
+    \vfill
+
+    {\normalsize
+      \ApplicationLocation\,\textperiodcentered\,\today\par
+    }
+  \end{titlepage}%
+}
+
+% ------------------------------------------------------------
+% GENERIC PDF INSERTION
+% A document is included only if the file exists.
+% ------------------------------------------------------------
+\newcommand{\IncludeApplicationDocument}[2]{%
+  \IfFileExists{#2}{%
+    \includepdf[
+      pages=-,
+      addtotoc={1,section,1,{#1},appdoc:#2}
+    ]{#2}%
+  }{%
+    \PackageWarning{application}{Document '#2' not found -- skipped}%
+  }%
+}
+
+\newcommand{\IncludeSubDocument}[3]{%
+  \IfFileExists{#3}{%
+    \includepdf[
+      pages=-,
+      addtotoc={1,#1,2,{#2},subdoc:#3}
+    ]{#3}%
+  }{%
+    \PackageWarning{application}{Document '#3' not found -- skipped}%
+  }%
+}
+
+% ------------------------------------------------------------
+% ACADEMIC QUALIFICATIONS
+%
+% Document hierarchy and selection are declared in application_documents.tex (project registry; selection comes from ../src/content_onePDF.tex).
+%
+% The first existing academic PDF creates the section entry.
+% No extra separator pages are inserted.
+%
+% LLM EDITING RULE:
+% - Complete-section visibility is controlled in ../src/content_onePDF.tex.
+% - Individual academic document visibility is controlled in ../src/content_onePDF.tex.
+% - Do not delete standard file definitions or reusable macros.
+% ------------------------------------------------------------
+\newif\ifAcademicSectionStarted
+\AcademicSectionStartedfalse
+
+\NewDocumentCommand{\AcademicDocument}{m m O{-}}{%
+  % #1 = TOC title
+  % #2 = PDF file
+  % #3 = OPTIONAL pdfpages page selection, e.g. [1-3,8-11]
+  %      Omit it to include the complete PDF.
+  %
+  % Selected page ranges should start with source page 1 so the TOC anchor remains stable.
+  \IfFileExists{#2}{%
+    \ifAcademicSectionStarted
+      \includepdf[
+        pages={#3},
+        addtotoc={1,subsection,2,{#1},academicitem:\thepage}
+      ]{#2}%
+    \else
+      \global\AcademicSectionStartedtrue
+      \includepdf[
+        pages={#3},
+        addtotoc={
+          1,section,1,{\MyL{\Value{OnePDF.Section.AcademicQualifications.TitleEN}}{\Value{OnePDF.Section.AcademicQualifications.TitleDE}}},academic,
+          1,subsection,2,{#1},academicitem:\thepage
+        }
+      ]{#2}%
+    \fi
+  }{%
+    \PackageWarning{application}{Academic document '#2' not found -- skipped}%
+  }%
+}
+
+\newcommand{\AcademicQualifications}{%
+  \AcademicQualificationDocuments
+}
+
+% ------------------------------------------------------------
+% PROFESSIONAL EXPERIENCE EVIDENCE
+%
+% Data model:
+%   Employer Certificate
+%     -> certificate issued by the Contractual employer
+%     -> may cover several project assignments
+%
+%   Project Certificate
+%     -> optional additional certificate issued for one
+%        Operational company / project assignment
+%
+% Examples:
+%   one contractual-employer certificate may support several role assignments
+%   assignment-specific project certificates remain optional additions
+% ------------------------------------------------------------
+\newif\ifProfessionalSectionStarted
+\ProfessionalSectionStartedfalse
+
+% Internal helper. The first existing professional PDF creates the
+% Professional Experience section entry; later PDFs become subsections.
+\newcommand{\ProfessionalEvidenceDocument}[2]{%
+  \IfFileExists{#2}{%
+    \ifProfessionalSectionStarted
+      \includepdf[
+        pages=-,
+        addtotoc={1,subsection,2,{#1},professional:#2}
+      ]{#2}%
+    \else
+      \global\ProfessionalSectionStartedtrue
+      \includepdf[
+        pages=-,
+        addtotoc={
+          1,section,1,{\MyL{\Value{OnePDF.Section.ProfessionalExperience.TitleEN}}{\Value{OnePDF.Section.ProfessionalExperience.TitleDE}}},professional,
+          1,subsection,2,{#1},professional:#2
+        }
+      ]{#2}%
+    \fi
+  }{%
+    \PackageWarning{application}{Professional evidence '#2' not found -- skipped}%
+  }%
+}
+
+% Employer Certificate
+% #1 Contractual employer
+% #2 PDF file
+\newcommand{\EmployerCertificate}[2]{%
+  \ProfessionalEvidenceDocument
+    {\MyL{Employer Certificate}{Arbeitszeugnis} -- #1}%
+    {#2}%
+}
+
+% Optional Project Certificate
+% #1 Contractual employer
+% #2 Operational company / project assignment
+% #3 PDF file
+\newcommand{\ProjectCertificate}[3]{%
+  \ProfessionalEvidenceDocument
+    {\MyL{Project Certificate}{Projektzeugnis} -- #1 -- \MyL{assignment at}{Einsatz bei} #2}%
+    {#3}%
+}
+
+% Backward-compatible generic command.
+% Prefer \EmployerCertificate and \ProjectCertificate in new selections.
+\newcommand{\ProfessionalCertificate}[3]{%
+  \IfStrEq{#1}{#2}{%
+    \EmployerCertificate{#1}{#3}%
+  }{%
+    \ProjectCertificate{#1}{#2}{#3}%
+  }%
+}
+
+% ------------------------------------------------------------
+% REFEREE CONTACT INFORMATION
+% Referees are added in application_documents.tex (project registry; selection comes from ../src/content_onePDF.tex) using \Referee.
+%
+% Layout goal:
+% - shared typography and section-title style from ../helper/style.tex
+% - page title at the top
+% - referee blocks placed around the vertical middle of the page
+% - moderate spacing between referees for easy scanning
+%
+% Syntax:
+% \Referee
+%   {Name}
+%   {Organisation EN}{Organisation DE}
+%   {Department EN}{Department DE}
+%   {E-mail}
+%   [optional status/note, already bilingual if required]
+%
+% LLM EDITING RULE:
+% - Keep contact details exactly as provided; do not invent titles, positions,
+%   departments, e-mail addresses, or current employment status.
+% - Individual referee visibility is controlled in ../src/content_onePDF.tex.
+% - Contact-page visibility is controlled in ../src/content_onePDF.tex.
+% ------------------------------------------------------------
+\newcommand{\RefereeList}{}
+
+\NewDocumentCommand{\Referee}{m m m m m m O{}}{%
+  \gappto\RefereeList{%
+    \noindent
+    \begin{minipage}{\linewidth}
+      {\large\textbf{-- #1}}\par
+      \vspace{0.22cm}
+      \MyL{#2}{#3}\par
+      \MyL{#4}{#5}\par
+      \ifstrempty{#7}{}{#7\par}%
+      \texttt{#6}\par
+    \end{minipage}
+    \par\vspace{1.05cm}%
+  }%
+}
+
+\newcommand{\RefereeContactPage}{%
+  \clearpage
+  \phantomsection
+  \ifAcademicReferenceSectionStarted
+    \addcontentsline{toc}{subsection}{\MyL{Referee Contact Information}{Kontaktinformationen der Referenzpersonen}}%
+  \else
+    \global\AcademicReferenceSectionStartedtrue
+    \addcontentsline{toc}{section}{\MyL{\Value{OnePDF.Section.AcademicReferences.TitleEN}}{\Value{OnePDF.Section.AcademicReferences.TitleDE}}}%
+    \addcontentsline{toc}{subsection}{\MyL{Referee Contact Information}{Kontaktinformationen der Referenzpersonen}}%
+  \fi
+
+  % Page title follows the general application/CV typography.
+  \section*{\MyL{\Value{OnePDF.Section.AcademicReferences.TitleEN}}{\Value{OnePDF.Section.AcademicReferences.TitleDE}}}
+  % \vspace{0.15cm}
+  % {\normalsize\MyL{Referee Contact Information}{Kontaktinformationen der Referenzpersonen}\par}
+
+  % Keep the contact blocks visually centered on the sheet instead of
+  % accumulating directly below the title.
+  \vfill
+  \begin{center}
+    \begin{minipage}{0.78\textwidth}
+      \RefereeList
+    \end{minipage}
+  \end{center}
+  \vfill
+
+  \clearpage
+}
+
+% ------------------------------------------------------------
+% ACADEMIC REFERENCE LETTERS
+% #1 Referee name
+% #2 PDF file
+% ------------------------------------------------------------
+\newif\ifAcademicReferenceSectionStarted
+\AcademicReferenceSectionStartedfalse
+
+\newcommand{\AcademicReferenceLetter}[2]{%
+  \IfFileExists{#2}{%
+    \ifAcademicReferenceSectionStarted
+      \includepdf[
+        pages=-,
+        addtotoc={1,subsection,2,{\MyL{Academic Reference Letter}{Akademisches Empfehlungsschreiben} -- #1},reference:#2}
+      ]{#2}%
+    \else
+      \global\AcademicReferenceSectionStartedtrue
+      \includepdf[
+        pages=-,
+        addtotoc={
+          1,section,1,{\MyL{\Value{OnePDF.Section.AcademicReferences.TitleEN}}{\Value{OnePDF.Section.AcademicReferences.TitleDE}}},references,
+          1,subsection,2,{\MyL{Academic Reference Letter}{Akademisches Empfehlungsschreiben} -- #1},reference:#2
+        }
+      ]{#2}%
+    \fi
+  }{%
+    \PackageWarning{application}{Academic reference letter '#2' not found -- skipped}%
+  }%
+}
+
+% ------------------------------------------------------------
+% ADDITIONAL CERTIFICATES
+%
+% These are supplementary qualifications/awards which are not part of the
+% core academic graduation documents and are not employment certificates.
+% Each physical certificate is uploaded as a separate PDF and registered in
+% application_documents.tex (project registry; selection comes from ../src/content_onePDF.tex).
+%
+% Prepared files are registered with generic numeric IDs in application_documents.tex (project registry; selection comes from ../src/content_onePDF.tex).
+%
+% LLM EDITING RULE:
+% - Section and document visibility are controlled in ../src/content_onePDF.tex.
+% - application_documents.tex contains only project-local registration/rendering logic.
+% - Do not delete source PDFs simply because they are not used in one job.
+% ------------------------------------------------------------
+\newif\ifAdditionalCertificateSectionStarted
+\AdditionalCertificateSectionStartedfalse
+
+% #1 English title
+% #2 German title
+% #3 PDF file
+\NewDocumentCommand{\AdditionalCertificate}{m m m o}{%
+  % #1 = English title
+  % #2 = German title
+  % #3 = PDF file path
+  % #4 = OPTIONAL: single PDF page number
+  %
+  % If #4 is omitted, all pages of the PDF are included.
+  % Examples:
+  %   \AdditionalCertificate{English}{Deutsch}{file.pdf}
+  %       -> all pages
+  %
+  %   \AdditionalCertificate{English}{Deutsch}{file.pdf}[2]
+  %       -> only page 2
+  %
+  % LLM NOTE:
+  % Leave the optional page argument [<page>] away when the complete
+  % certificate should be included. Add [<page>] only if a single
+  % relevant page should be extracted from a multi-page source PDF.
+
+  \IfNoValueTF{#4}{%
+    \def\AdditionalCertificatePages{-}%
+    \def\AdditionalCertificateTOCPage{1}%
+  }{%
+    \def\AdditionalCertificatePages{#4}%
+    \def\AdditionalCertificateTOCPage{#4}%
+  }%
+
+  \IfFileExists{#3}{%
+    \ifAdditionalCertificateSectionStarted
+      \includepdf[
+        pages={\AdditionalCertificatePages},
+        addtotoc={
+          \AdditionalCertificateTOCPage,
+          subsection,
+          2,
+          {\MyL{#1}{#2}},
+          additionalcertificate:#3
+        }
+      ]{#3}%
+    \else
+      \global\AdditionalCertificateSectionStartedtrue
+      \includepdf[
+        pages={\AdditionalCertificatePages},
+        addtotoc={
+          \AdditionalCertificateTOCPage,
+          section,
+          1,
+          {\MyL{\Value{OnePDF.Section.AdditionalCertificates.TitleEN}}{\Value{OnePDF.Section.AdditionalCertificates.TitleDE}}},
+          additionalcertificates,
+          \AdditionalCertificateTOCPage,
+          subsection,
+          2,
+          {\MyL{#1}{#2}},
+          additionalcertificate:#3
+        }
+      ]{#3}%
+    \fi
+  }{%
+    \PackageWarning{application}
+      {Additional certificate '#3' not found -- skipped}%
+  }%
+}
+
+% ============================================================
+% SECTION RENDERING / ORDER CONTROL
+% ============================================================
+
+\newcommand{\RenderCoverLetter}{%
+  \IfFlag{OnePDF.Document.CoverLetter.Visible}{%
+    \IncludeApplicationDocument
+      {\MyL{Cover Letter}{Anschreiben}}
+      {\Value{OnePDF.File.CoverLetter}}%
+  }{}%
+}
+
+\newcommand{\RenderCV}{%
+  \IfFlag{OnePDF.Document.CV.Visible}{%
+    \IncludeApplicationDocument
+      {\MyL{Curriculum Vitae}{Lebenslauf}}
+      {\Value{OnePDF.File.CV}}%
+  }{}%
+}
+
+\newcommand{\RenderAcademicQualifications}{%
+  \IfFlag{OnePDF.Section.AcademicQualifications.Visible}{\AcademicQualifications}{}%
+}
+
+\newcommand{\RenderProfessionalExperience}{%
+  \IfFlag{OnePDF.Section.ProfessionalExperience.Visible}{\ProfessionalDocuments}{}%
+}
+
+\newcommand{\RenderAcademicReferences}{%
+  \IfFlag{OnePDF.Section.AcademicReferences.Visible}{%
+    \IfFlag{OnePDF.RefereeContactInformation.Visible}{\RefereeContactPage}{}%
+    \AcademicReferenceDocuments
+  }{}%
+}
+
+\newcommand{\RenderAdditionalCertificates}{%
+  \IfFlag{OnePDF.Section.AdditionalCertificates.Visible}{\AdditionalCertificateDocuments}{}%
+}
+
+% Dispatch one ordered item ID from ../src/content_onePDF.tex.
+\newcommand{\RenderOnePDFItem}[1]{%
+  \ifcsname RenderOnePDFItem@#1\endcsname
+    \csname RenderOnePDFItem@#1\endcsname
+  \else
+    \PackageWarning{application}{Unknown onePDF order item '#1' -- skipped}%
+  \fi
+}
+
+\expandafter\def\csname RenderOnePDFItem@CoverLetter\endcsname{\RenderCoverLetter}
+\expandafter\def\csname RenderOnePDFItem@CV\endcsname{\RenderCV}
+\expandafter\def\csname RenderOnePDFItem@AcademicQualifications\endcsname{\RenderAcademicQualifications}
+\expandafter\def\csname RenderOnePDFItem@ProfessionalExperience\endcsname{\RenderProfessionalExperience}
+\expandafter\def\csname RenderOnePDFItem@AcademicReferences\endcsname{\RenderAcademicReferences}
+\expandafter\def\csname RenderOnePDFItem@AdditionalCertificates\endcsname{\RenderAdditionalCertificates}
+
+\newcommand{\RenderOnePDFPackage}{%
+  \RenderOnePDFItem{\Value{OnePDF.Order01}}%
+  \RenderOnePDFItem{\Value{OnePDF.Order02}}%
+  \RenderOnePDFItem{\Value{OnePDF.Order03}}%
+  \RenderOnePDFItem{\Value{OnePDF.Order04}}%
+  \RenderOnePDFItem{\Value{OnePDF.Order05}}%
+  \RenderOnePDFItem{\Value{OnePDF.Order06}}%
+}

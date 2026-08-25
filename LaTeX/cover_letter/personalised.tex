@@ -1,0 +1,54 @@
+% ============================================================
+% COVER LETTER LAYOUT HELPERS
+% ============================================================
+% Project-specific rendering only. No applicant facts and no job-specific prose.
+
+% Header content is assembled from the shared personal source data.
+\newcommand{\HeaderTitle}{\FontCoverHeaderName \ApplicantFullName}
+\newcommand{\HeaderSubtitle}{%
+  \footnotesize
+  \ApplicantStreet, \ApplicantPostalCode\space\MyL{\ApplicantCityEN}{\ApplicantCityDE}
+  \textperiodcentered\space\ApplicantPhone
+  \textperiodcentered\space\ApplicantEmail%
+}
+
+% Shift from current text position to left paper edge.
+\newcommand*\ShiftToLeftPaperEdge{%
+  \hspace*{-2\dimexpr 1in+\hoffset+\oddsidemargin\relax}%
+}
+
+% Shift from left paper edge back into the text area.
+\newcommand*\ShiftBackToTextArea{%
+  \hspace*{2\dimexpr 1in+\hoffset+\oddsidemargin\relax}%
+}
+
+\newcommand{\MyHeader}{%
+  \begingroup
+  \noindent
+  \setlength{\fboxsep}{0pt}%
+  \ShiftToLeftPaperEdge
+  \colorbox{ThemePrimary}{%
+    \parbox[b][\BannerH][t]{1.05\paperwidth}{%
+      \ShiftBackToTextArea
+      \color{ThemeWhite}\sffamily
+      \vspace*{0pt}%
+      \hbox to \paperwidth{%
+        \rlap{%
+          \vbox to \BannerH{%
+            \vss
+            \hbox to .8\paperwidth{\hfil\bfseries\HeaderTitle\hfil}%
+            \vss
+          }%
+        }%
+        \vbox to \BannerH{%
+          \vfil
+          \hbox to .8\paperwidth{\hfil\HeaderSubtitle\hfil}%
+          \kern5pt
+        }%
+        \hfil
+      }%
+    }%
+  }%
+  \par
+  \endgroup
+}

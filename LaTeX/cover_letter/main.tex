@@ -1,0 +1,102 @@
+% Shared commands and the single language/metadata source must load before \documentclass.
+\input{../helper/common_commands.tex}
+\input{../src/content_CV.tex}
+\input{../helper/document_options.tex}
+\documentclass[
+  sender,
+  fromalign=right,
+  paper=a4,
+  version=last,
+  fontsize=\CoverLetterBaseFontSize,
+  DIV=20,
+  backaddress=false,
+  addrfield=true,
+  BCOR=0mm
+]{scrlttr2}
+
+% ============================================================
+% SOURCES
+% ============================================================
+\input{../src/content_cover_letter.tex}
+\input{../src_personal/personal_data.tex}
+\input{../helper/style.tex}
+\input{personalised.tex}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage[main=\Language]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\usepackage{setspace}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{ifthen}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+
+\selectlanguage{\Language}
+
+% ============================================================
+% LETTER HELPERS
+% ============================================================
+\newcommand{\ShowSubject}{%
+  \ifdefempty{\TargetPositionTitle}{%
+    \MyL{Initiative Application}{Initiativbewerbung}%
+  }{%
+    \MyL{Application as}{Bewerbung als}\space\TargetPositionTitle%
+  }%
+  \ifdefempty{\TargetReferenceNumber}{}{ [Ref.: \TargetReferenceNumber]}%
+}
+
+\newcommand{\ShowAddress}{%
+  \TargetOrganisation\\
+  \ifdefempty{\TargetContactLastName}{}{%
+    \TargetContactTitle~\TargetContactFirstName~\TargetContactLastName\\}%
+  \ifdefempty{\TargetDepartment}{}{\TargetDepartment\\}%
+  \ifdefempty{\TargetStreet}{}{\TargetStreet\\}%
+  \ifdefempty{\TargetStreet}{\TargetCity}{\TargetPostalCode~\TargetCity}%
+}
+
+% ============================================================
+% LAYOUT
+% ============================================================
+\newlength{\ImgH}
+\newlength{\BannerH}
+\setlength{\ImgH}{30mm}
+\setlength{\BannerH}{\dimexpr\ImgH\relax}
+
+\setplength{firstheadvpos}{0pt}
+\setplength{toaddrvpos}{35mm}
+\setplength{refvpos}{75mm}
+\setkomavar{firstfoot}{}
+\setkomavar{nextfoot}{}
+\setkomavar{fromname}{}
+\setkomavar{fromaddress}{}
+\setkomavar{firsthead}{\MyHeader}
+\setkomavar{subject}{\ShowSubject}
+\setkomavar{date}{\today}
+\setkomavar{place}{\MyL{\ApplicantCityEN}{\ApplicantCityDE}}
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+\begin{letter}{\ShowAddress}
+\opening{\MyOpening}
+
+\setstretch{1.2}
+\Value{CoverLetter.Paragraph01}\par
+\Value{CoverLetter.Paragraph02}\par
+\Value{CoverLetter.Paragraph03}\par
+\Value{CoverLetter.Paragraph04}\par
+
+~\CoverLetterClosingSentence
+
+\setstretch{1}
+\closing{\MyClosing}
+
+\vspace{-2cm}
+\includegraphics[height=1.8cm]{\ApplicantSignatureFile}
+\end{letter}
+\end{document}

@@ -1,0 +1,46 @@
+% ============================================================
+% SHARED COMMANDS
+% ============================================================
+% Read-only for job-specific content generators.
+% Reusable commands shared by all LaTeX projects.
+
+\def\LanguageEnglish{english}
+\def\LanguageGerman{ngerman}
+
+% Expandable bilingual selector.
+% #1 = English text, #2 = German text.
+\newcommand{\MyL}[2]{%
+  \ifx\Language\LanguageGerman
+    #2%
+  \else
+    #1%
+  \fi
+}
+
+% ------------------------------------------------------------
+% LLM-READABLE KEY/VALUE STORAGE
+% ------------------------------------------------------------
+% Keys may contain digits and dots, e.g. Role06.Tasks or Education03.Visible.
+% This avoids invalid LaTeX control-sequence names containing digits.
+\newcommand{\SetValue}[2]{%
+  \expandafter\def\csname SharedValue:#1\endcsname{#2}%
+}
+\newcommand{\Value}[1]{\csname SharedValue:#1\endcsname}
+
+% Boolean flags use 1 = enabled, 0 = disabled.
+\newcommand{\SetFlag}[2]{%
+  \expandafter\def\csname SharedFlag:#1\endcsname{#2}%
+}
+% Expand a flag to its numeric value (1 or 0).
+\newcommand{\Flag}[1]{\csname SharedFlag:#1\endcsname}
+
+
+% Generic conditional for LLM-readable boolean flags.
+% #1 = flag key, #2 = enabled branch, #3 = disabled branch.
+\newcommand{\IfFlag}[3]{%
+  \ifnum\Flag{#1}=1\relax
+    #2%
+  \else
+    #3%
+  \fi
+}

@@ -1,0 +1,157 @@
+% ============================================================
+% AI-EDITABLE CV CONTENT
+% ============================================================
+% Source basis:
+%   LL_Tabstopp_blaue_Linien(1).dotx
+% Job-specific / presentation content only.
+% Stable applicant facts: ../src_personal/personal_data.tex
+% ============================================================
+
+\def\Language{ngerman}
+
+\ifx\Language\LanguageGerman
+  \DocumentMetadata{lang=de-DE,pdfversion=2.0}
+\else
+  \DocumentMetadata{lang=en-US,pdfversion=2.0}
+\fi
+
+% ------------------------------------------------------------
+% SECTION VISIBILITY
+% ------------------------------------------------------------
+\SetFlag{Section.ProfessionalExperience}{1}
+\SetFlag{Section.Education}{1}
+\SetFlag{Section.Skills}{1}
+\SetFlag{Section.Publications}{0}
+\SetFlag{Section.Projects}{0}
+\SetFlag{Section.ExtraCurricular}{0}
+\SetFlag{Section.Interests}{0}
+
+% Three professional stations are present in the Word template.
+\SetFlag{Role06.Visible}{0}
+\SetFlag{Role05.Visible}{0}
+\SetFlag{Role04.Visible}{0}
+\SetFlag{Role03.Visible}{1}
+\SetFlag{Role02.Visible}{1}
+\SetFlag{Role01.Visible}{1}
+
+\SetFlag{Role06.TasksVisible}{0}
+\SetFlag{Role05.TasksVisible}{0}
+\SetFlag{Role04.TasksVisible}{0}
+\SetFlag{Role03.TasksVisible}{1}
+\SetFlag{Role02.TasksVisible}{1}
+\SetFlag{Role01.TasksVisible}{1}
+
+\SetFlag{Education03.Visible}{1}
+\SetFlag{Education02.Visible}{1}
+\SetFlag{Education01.Visible}{1}
+
+\SetFlag{Skill.Languages}{1}
+\SetFlag{Skill.Set01}{1}
+\SetFlag{Skill.Set02}{1}
+\SetFlag{Skill.Set03}{0}
+\SetFlag{Skill.Set04}{0}
+\SetFlag{Skill.Set05}{0}
+\SetFlag{Skill.Set06}{0}
+\SetFlag{Skill.Set07}{0}
+\SetFlag{Skill.Set08}{0}
+\SetFlag{Skill.Set09}{0}
+\SetFlag{Skill.Set10}{0}
+
+\SetFlag{Publication01.Visible}{0}
+\SetFlag{Project01.Visible}{0}
+\SetFlag{Project02.Visible}{0}
+\SetFlag{Project03.Visible}{0}
+\SetFlag{Project04.Visible}{0}
+\SetFlag{Activity01.Visible}{0}
+\SetFlag{Activity02.Visible}{0}
+\SetFlag{Interest01.Visible}{0}
+\SetFlag{Interest02.Visible}{0}
+\SetFlag{Interest03.Visible}{0}
+
+% ------------------------------------------------------------
+% HEADER HIGHLIGHTS
+% Terms are taken from the Word CV content.
+% ------------------------------------------------------------
+\SetValue{Profile.Highlight01}{Bürokaufmann}
+\SetValue{Profile.Highlight02}{Büroorganisation}
+\SetValue{Profile.Highlight03}{Rechnungsbearbeitung}
+\SetValue{Profile.Highlight04}{MS-Office}
+
+% Optional ATS keyword field based only on source wording.
+\def\atsKeywords{Bürokaufmann, Büroorganisation, Personalakten, Rechnungsbearbeitung, Kundenbetreuung, Buchführung, MS-Office, Microsoft Word, Microsoft Excel, Microsoft PowerPoint}%
+
+% Education detail fields used by the renderer but not populated by the Word template.
+\SetValue{Education03.MainSubjects}{}
+\SetValue{Education02.MainSubjects}{}
+
+% ------------------------------------------------------------
+% KNOWLEDGE / SKILLS
+% ------------------------------------------------------------
+\SetValue{Skill.Set01.Content}{%
+  \SkillSetBlock{EDV-Kenntnisse}{%
+    \CVSkillTabRow{Microsoft Word}{sehr gute Kenntnisse}%
+    \CVSkillTabRow{Microsoft Excel}{täglich in Anwendung}%
+    \CVSkillTabRow{Microsoft PowerPoint}{Grundkenntnisse}%
+  }%
+}
+
+\SetValue{Skill.Set02.Content}{%
+  \SkillSetBlock{Weiterbildung}{%
+    \CVSkillTabRow{04/2017 -- 05/2017: Zeitmanagement-Seminar}{Ausbildungsakademie Muster, München}%
+    \CVSkillTabRow{11/2016 -- 12/2016: Kaufmännischer Einsatz für MS-Office}{Ausbildungsakademie Muster, München}%
+    \CVSkillTabRow{03/2015 -- 05/2015: Büroorganisation und Statistik}{Ausbildungsakademie Muster, München}%
+  }%
+}
+
+\SetValue{Skill.Set03.Content}{}%
+\SetValue{Skill.Set04.Content}{}%
+\SetValue{Skill.Set05.Content}{}%
+\SetValue{Skill.Set06.Content}{}%
+\SetValue{Skill.Set07.Content}{}%
+\SetValue{Skill.Set08.Content}{}%
+\SetValue{Skill.Set09.Content}{}%
+\SetValue{Skill.Set10.Content}{}%
+
+% ------------------------------------------------------------
+% PROFESSIONAL TASKS
+% ------------------------------------------------------------
+\SetValue{Role03.Tasks}{%
+  \begin{itemize}
+    \item Erstellung von Präsentationen
+    \item Organisation von hauseigenen Messen
+    \item Führen und Verwalten von Personalakten
+    \item Korrespondenz und Tagesgeschäft
+  \end{itemize}%
+}
+
+\SetValue{Role02.Tasks}{%
+  \begin{itemize}
+    \item Eingangsrechnungen kontrollieren
+    \item Ausgangsrechnungen erstellen
+    \item Angebote unterbreiten und einholen
+    \item Forderungsmanagement
+  \end{itemize}%
+}
+
+\SetValue{Role01.Tasks}{%
+  \begin{itemize}
+    \item Telefonische Kundenbetreuung
+    \item Buchführung und Rechnungsbearbeitung
+    \item Steuern und Sozialabgaben abführen
+    \item Posteingang
+  \end{itemize}%
+}
+
+\SetValue{Role04.Tasks}{}%
+\SetValue{Role05.Tasks}{}%
+\SetValue{Role06.Tasks}{}%
+
+% No project descriptions are present in the Word template.
+\SetValue{Project01.DescriptionEN}{}
+\SetValue{Project01.DescriptionDE}{}
+\SetValue{Project02.DescriptionEN}{}
+\SetValue{Project02.DescriptionDE}{}
+\SetValue{Project03.DescriptionEN}{}
+\SetValue{Project03.DescriptionDE}{}
+\SetValue{Project04.DescriptionEN}{}
+\SetValue{Project04.DescriptionDE}{}

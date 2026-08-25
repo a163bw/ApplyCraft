@@ -1,0 +1,139 @@
+% ============================================================
+% APPLICATION DOCUMENT REGISTRY / PROJECT-SPECIFIC COMPOSITION
+% ============================================================
+% Pure onePDF project logic. No user-editable facts, paths or selections.
+% Static facts/paths: ../src_personal/
+% Application-dependent selection/order/titles: ../src/content_onePDF.tex
+
+% ------------------------------------------------------------
+% ACADEMIC QUALIFICATIONS
+% ------------------------------------------------------------
+\newcommand{\AcademicQualificationDocuments}{%
+  \IfFlag{OnePDF.AcademicDegree02.Diploma.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 02 -- Diploma}{Akademischer Abschluss 02 -- Urkunde}}
+      {\Value{AcademicDegree02.DiplomaFile}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicDegree02.Certificate.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 02 -- Certificate}{Akademischer Abschluss 02 -- Zeugnis}}
+      {\Value{AcademicDegree02.CertificateFile}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicDegree02.Transcript.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 02 -- Diploma Supplement and Transcript}{Akademischer Abschluss 02 -- Diploma Supplement und Transcript}}
+      {\Value{AcademicDegree02.TranscriptFile}}[\Value{AcademicDegree02.TranscriptPages}]%
+  }{}%
+  \IfFlag{OnePDF.AcademicDegree02.Specialization.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 02 -- Specialization Certificate}{Akademischer Abschluss 02 -- Schwerpunktzertifikat}}
+      {\Value{AcademicDegree02.SpecializationFile}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicDegree01.Diploma.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 01 -- Diploma}{Akademischer Abschluss 01 -- Urkunde}}
+      {\Value{AcademicDegree01.DiplomaFile}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicDegree01.Transcript.Visible}{%
+    \AcademicDocument
+      {\MyL{Academic Degree 01 -- Transcript}{Akademischer Abschluss 01 -- Leistungsnachweis}}
+      {\Value{AcademicDegree01.TranscriptFile}}[\Value{AcademicDegree01.TranscriptPages}]%
+  }{}%
+}
+
+% ------------------------------------------------------------
+% PROFESSIONAL EXPERIENCE EVIDENCE
+% ------------------------------------------------------------
+\newcommand{\ProfessionalDocuments}{%
+  \IfFlag{OnePDF.Role06.EmployerCertificate.Visible}{%
+    \EmployerCertificate{\Value{Role06.Employer}}{\Value{OnePDF.File.Role06.EmployerCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role05.EmployerCertificate.Visible}{%
+    \EmployerCertificate{\Value{Role05.Employer}}{\Value{OnePDF.File.Role05.EmployerCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role02_04.EmployerCertificate.Visible}{%
+    \EmployerCertificate{\Value{Role02.Employer}}{\Value{OnePDF.File.Role02_04.EmployerCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role02.ProjectCertificate.Visible}{%
+    \ProjectCertificate{\Value{Role02.Employer}}{\Value{Role02.OperationalCompany}}{\Value{OnePDF.File.Role02.ProjectCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role03.ProjectCertificate.Visible}{%
+    \ProjectCertificate{\Value{Role03.Employer}}{\Value{Role03.OperationalCompany}}{\Value{OnePDF.File.Role03.ProjectCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role04.ProjectCertificate.Visible}{%
+    \ProjectCertificate{\Value{Role04.Employer}}{\Value{Role04.OperationalCompany}}{\Value{OnePDF.File.Role04.ProjectCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role01.EmployerCertificate.Visible}{%
+    \EmployerCertificate{\Value{Role01.Employer}}{\Value{OnePDF.File.Role01.EmployerCertificate}}%
+  }{}%
+  \IfFlag{OnePDF.Role01.ProjectCertificate.Visible}{%
+    \ProjectCertificate{\Value{Role01.Employer}}{\Value{Role01.OperationalCompany}}{\Value{OnePDF.File.Role01.ProjectCertificate}}%
+  }{}%
+}
+
+% ------------------------------------------------------------
+% ACADEMIC REFERENCE CONTACTS
+% ------------------------------------------------------------
+\newcommand{\RegisterReferees}{%
+  \IfFlag{OnePDF.ReferencePerson01.Contact.Visible}{%
+    \Referee
+      {\Value{ReferencePerson01.Name}}
+      {\Value{ReferencePerson01.OrganisationEN}}{\Value{ReferencePerson01.OrganisationDE}}
+      {\Value{ReferencePerson01.DepartmentEN}}{\Value{ReferencePerson01.DepartmentDE}}
+      {\Value{ReferencePerson01.Email}}[\Value{ReferencePerson01.Status}]%
+  }{}%
+  \IfFlag{OnePDF.ReferencePerson02.Contact.Visible}{%
+    \Referee
+      {\Value{ReferencePerson02.Name}}
+      {\Value{ReferencePerson02.OrganisationEN}}{\Value{ReferencePerson02.OrganisationDE}}
+      {\Value{ReferencePerson02.DepartmentEN}}{\Value{ReferencePerson02.DepartmentDE}}
+      {\Value{ReferencePerson02.Email}}[\Value{ReferencePerson02.Status}]%
+  }{}%
+  \IfFlag{OnePDF.ReferencePerson03.Contact.Visible}{%
+    \Referee
+      {\Value{ReferencePerson03.Name}}
+      {\Value{ReferencePerson03.OrganisationEN}}{\Value{ReferencePerson03.OrganisationDE}}
+      {\Value{ReferencePerson03.DepartmentEN}}{\Value{ReferencePerson03.DepartmentDE}}
+      {\Value{ReferencePerson03.Email}}[\Value{ReferencePerson03.Status}]%
+  }{}%
+}
+\RegisterReferees
+
+% ------------------------------------------------------------
+% ACADEMIC REFERENCE LETTERS
+% ------------------------------------------------------------
+\newcommand{\AcademicReferenceDocuments}{%
+  \IfFlag{OnePDF.AcademicReference01.Visible}{%
+    \AcademicReferenceLetter{\Value{ReferencePerson01.Name}}{\Value{OnePDF.File.AcademicReference01}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicReference02.Visible}{%
+    \AcademicReferenceLetter{\Value{ReferencePerson02.Name}}{\Value{OnePDF.File.AcademicReference02}}%
+  }{}%
+  \IfFlag{OnePDF.AcademicReference03.Visible}{%
+    \AcademicReferenceLetter{\Value{ReferencePerson03.Name}}{\Value{OnePDF.File.AcademicReference03}}%
+  }{}%
+}
+
+% ------------------------------------------------------------
+% ADDITIONAL CERTIFICATES / AWARDS
+% ------------------------------------------------------------
+\newcommand{\AdditionalCertificateDocuments}{%
+  \IfFlag{OnePDF.AdditionalCertificate01.Visible}{%
+    \AdditionalCertificate
+      {\Value{AdditionalCertificate01.TitleEN}}
+      {\Value{AdditionalCertificate01.TitleDE}}
+      {\Value{OnePDF.File.AdditionalCertificate01}}[\Value{OnePDF.File.AdditionalCertificate01.Pages}]%
+  }{}%
+  \IfFlag{OnePDF.AdditionalCertificate02.Visible}{%
+    \AdditionalCertificate
+      {\Value{AdditionalCertificate02.TitleEN}}
+      {\Value{AdditionalCertificate02.TitleDE}}
+      {\Value{OnePDF.File.AdditionalCertificate02}}%
+  }{}%
+  \IfFlag{OnePDF.AdditionalCertificate03.Visible}{%
+    \AdditionalCertificate
+      {\Value{AdditionalCertificate03.TitleEN}}
+      {\Value{AdditionalCertificate03.TitleDE}}
+      {\Value{OnePDF.File.AdditionalCertificate03}}%
+  }{}%
+}
