@@ -15,6 +15,7 @@ ONEPDF = "onePDF"
 ONEPDF_STAGING = LATEX_ROOT / ONEPDF / "documents" / "application"
 # hyperref/longtable/tocloft need a second run to settle references.
 PASSES = 2
+AUX_SUFFIXES = (".aux", ".toc", ".out", ".fls", ".fdb_latexmk")
 LOG_EXCERPT_LINES = 40
 
 
@@ -28,15 +29,27 @@ def find_pdflatex() -> str:
     return pdflatex
 
 
-def compile_project(pdflatex: str, name: str, out_dir: Path) -> bool:
+def clean_aux(project_dir: Path) -> None:
+    """Drop generated state so a previous application cannot leak into this build."""
+    for suffix in AUX_SUFFIXES:
+        (project_dir / f"main{suffix}").unlink(missing_ok=True)
+
+
+def compile_project(
+    pdflatex: str,
+    name: str,
+    out_dir: Path,
+    target_name: str | None = None,
+    passes: int = PASSES,
+) -> bool:
     project_dir = LATEX_ROOT / name
     main_tex = project_dir / "main.tex"
     if not main_tex.is_file():
         print(f"[{name}] SKIP: {main_tex} does not exist.")
         return False
 
-    for run in range(1, PASSES + 1):
-        print(f"[{name}] pdflatex pass {run}/{PASSES} ...")
+    for run in range(1, passes + 1):
+        print(f"[{name}] pdflatex pass {run}/{passes} ...")
         result = subprocess.run(
             [
                 pdflatex,
@@ -64,7 +77,7 @@ def compile_project(pdflatex: str, name: str, out_dir: Path) -> bool:
         print(f"[{name}] FAILED: pdflatex reported success but {produced} is missing.")
         return False
 
-    target = out_dir / f"{name.lower()}.pdf"
+    target = out_dir / (target_name or f"{name.lower()}.pdf")
     if not (target.exists() and target.samefile(produced)):
         shutil.copy2(produced, target)
     print(f"[{name}] OK -> {target}")
