@@ -6,6 +6,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 LATEX_ROOT = Path(__file__).resolve().parent / "LaTeX"
@@ -48,37 +49,39 @@ def compile_project(
         print(f"[{name}] SKIP: {main_tex} does not exist.")
         return False
 
-    for run in range(1, passes + 1):
-        print(f"[{name}] pdflatex pass {run}/{passes} ...")
-        result = subprocess.run(
-            [
-                pdflatex,
-                "-interaction=nonstopmode",
-                "-halt-on-error",
-                "-file-line-error",
-                "main.tex",
-            ],
-            cwd=project_dir,
-            shell=False,
-            capture_output=True,
-            text=True,
-            errors="replace",
-        )
-        if result.returncode != 0:
-            print(f"[{name}] FAILED with exit code {result.returncode}.")
-            excerpt = (result.stdout or "").splitlines()[-LOG_EXCERPT_LINES:]
-            for line in excerpt:
-                print(f"    {line}")
-            print(f"[{name}] full log: {project_dir / 'main.log'}")
+    with tempfile.TemporaryDirectory(prefix=f"applycraft-{name}-") as output_path:
+        output_dir = Path(output_path)
+        for run in range(1, passes + 1):
+            print(f"[{name}] pdflatex pass {run}/{passes} ...")
+            result = subprocess.run(
+                [
+                    pdflatex,
+                    "-interaction=nonstopmode",
+                    "-halt-on-error",
+                    "-file-line-error",
+                    f"-output-directory={output_dir.as_posix()}",
+                    "main.tex",
+                ],
+                cwd=project_dir,
+                shell=False,
+                capture_output=True,
+                text=True,
+                errors="replace",
+            )
+            if result.returncode != 0:
+                print(f"[{name}] FAILED with exit code {result.returncode}.")
+                excerpt = (result.stdout or "").splitlines()[-LOG_EXCERPT_LINES:]
+                for line in excerpt:
+                    print(f"    {line}")
+                print(f"[{name}] full log: {output_dir / 'main.log'}")
+                return False
+
+        produced = output_dir / "main.pdf"
+        if not produced.is_file():
+            print(f"[{name}] FAILED: pdflatex reported success but {produced} is missing.")
             return False
 
-    produced = project_dir / "main.pdf"
-    if not produced.is_file():
-        print(f"[{name}] FAILED: pdflatex reported success but {produced} is missing.")
-        return False
-
-    target = out_dir / (target_name or f"{name.lower()}.pdf")
-    if not (target.exists() and target.samefile(produced)):
+        target = out_dir / (target_name or f"{name.lower()}.pdf")
         shutil.copy2(produced, target)
     print(f"[{name}] OK -> {target}")
     return True

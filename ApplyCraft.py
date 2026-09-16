@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import shutil
 import sys
+import unicodedata
 from pathlib import Path
 
 from build_pdfs import (
@@ -26,11 +27,12 @@ from build_pdfs import (
 
 # Directories that are searched recursively for SRC_FOLDER_NAME.
 PARENT_FOLDERS: list[Path] = [
-    Path(r"H:\My Drive\Munka\260823"),
+    # Path(r"H:\My Drive\Munka\00_open"),
+    Path(r"H:\My Drive\Munka\99_test\x_musterman"),
 ]
 
 # Exact (case-sensitive) name of the folders holding the src content.
-SRC_FOLDER_NAME = "Latex_test"
+SRC_FOLDER_NAME = "LaTeX_src"
 
 # --------------------------------------------------------------------------
 
@@ -47,6 +49,29 @@ PDF_PREFIX = {
 }
 
 
+def pdf_output_name(project_name: str, stem: str) -> str:
+    """Return the final PDF file name for a built project and applicant stem."""
+    prefix = PDF_PREFIX.get(project_name, project_name)
+    return f"{prefix}_{stem}.pdf"
+
+
+def copy_pdf_to_output(source_pdf: Path, output_dir: Path, project_name: str, stem: str) -> Path:
+    """Copy a generated PDF into the final output directory using the applicant-stem naming."""
+    target = output_dir / pdf_output_name(project_name, stem)
+    if source_pdf.exists():
+        shutil.copy2(source_pdf, target)
+    return target
+
+
+def sanitize_filename_stem(first_name: str, last_name: str) -> str:
+    """Return an ASCII-safe, file-system-friendly stem for the final PDF name."""
+    raw = f"{first_name.strip()}_{last_name.strip().upper()}"
+    normalized = unicodedata.normalize("NFKD", raw)
+    ascii_only = "".join(ch for ch in normalized if not unicodedata.combining(ch) and ch.isascii())
+    result = re.sub(r"[^A-Za-z0-9._-]+", "_", ascii_only)
+    return result.strip("_")
+
+
 def read_applicant_stem() -> str:
     text = PERSONAL_DATA.read_text(encoding="utf-8")
     parts = []
@@ -56,8 +81,7 @@ def read_applicant_stem() -> str:
             raise RuntimeError(f"\\{command} is missing or empty in {PERSONAL_DATA}.")
         parts.append(match.group(1).strip())
 
-    first, last = parts[0], parts[1].upper()
-    return re.sub(r"[^\w.-]", "_", f"{first}_{last}")
+    return sanitize_filename_stem(parts[0], parts[1])
 
 
 def find_src_folders() -> list[Path]:
@@ -107,14 +131,12 @@ def process_folder(pdflatex: str, folder: Path, stem: str) -> bool:
         if name == "onePDF":
             if not stage_onepdf_documents(ONEPDF_CV, results):
                 return False
-            ok = compile_project(
-                pdflatex, name, parent, f"{PDF_PREFIX[name]}_{stem}.pdf", ONEPDF_PASSES
-            )
+            ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem), ONEPDF_PASSES)
         elif onepdf_mode:
-            # CV and cover letter are only inputs for onePDF here, so they stay in place.
-            ok = compile_project(pdflatex, name, project_dir, "main.pdf")
+            # Keep academic outputs available at the end location using the standard applicant stem naming.
+            ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem))
         else:
-            ok = compile_project(pdflatex, name, parent, f"{PDF_PREFIX[name]}_{stem}.pdf")
+            ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem))
         results[name] = ok
         if not ok:
             return False
@@ -154,7 +176,9 @@ def main() -> int:
 
     print("\nSummary:")
     for folder, ok in results.items():
-        print(f"  {'OK    ' if ok else 'FAILED'} {folder}")
+        parent = Path(folder).resolve().parent
+        link = f"\033]8;;{parent.as_uri()}\033\\{parent}\033]8;;\033\\"
+        print(f"  {'OK    ' if ok else 'FAILED'} {link}")
 
     return 0 if all(results.values()) else 1
 
