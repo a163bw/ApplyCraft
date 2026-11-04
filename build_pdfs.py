@@ -87,7 +87,11 @@ def compile_project(
     return True
 
 
-def stage_onepdf_documents(cv_project: str, results: dict[str, bool]) -> bool:
+def stage_onepdf_documents(
+    cv_project: str,
+    results: dict[str, bool],
+    source_paths: dict[str, Path | None] | None = None,
+) -> bool:
     """Refresh the core PDFs onePDF embeds; keeps existing files if a source was not built."""
     sources = {
         "cv.pdf": cv_project,
@@ -95,9 +99,20 @@ def stage_onepdf_documents(cv_project: str, results: dict[str, bool]) -> bool:
     }
     for target_name, project in sources.items():
         if not results.get(project, False):
-            print(f"[{ONEPDF}] {project} was not built in this run; keeping existing {target_name}.")
+            if source_paths is not None:
+                (ONEPDF_STAGING / target_name).unlink(missing_ok=True)
+                print(f"[{ONEPDF}] {project} was not built in this run; removed stale {target_name}.")
+            else:
+                print(f"[{ONEPDF}] {project} was not built in this run; keeping existing {target_name}.")
             continue
-        source = LATEX_ROOT / project / "main.pdf"
+        source = (
+            source_paths.get(target_name) if source_paths is not None
+            else LATEX_ROOT / project / "main.pdf"
+        )
+        if source is None:
+            (ONEPDF_STAGING / target_name).unlink(missing_ok=True)
+            print(f"[{ONEPDF}] no source for {target_name}; removed stale staged PDF.")
+            continue
         if not source.is_file():
             print(f"[{ONEPDF}] FAILED: {source} is missing.")
             return False

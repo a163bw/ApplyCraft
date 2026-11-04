@@ -28,7 +28,12 @@ from build_pdfs import (
 # Directories that are searched recursively for SRC_FOLDER_NAME.
 PARENT_FOLDERS: list[Path] = [
     # Path(r"H:\My Drive\Munka\00_open"),
-    Path(r"H:\My Drive\Munka\99_test\x_musterman"),
+    Path(r"H:\My Drive\Munka\00_open\RWTH - MSE"),
+    # Path(r"H:\My Drive\Munka\00_open\Allied Vision\261029-field-application-engineer-gilching"),
+    # Path(r"H:\My Drive\Munka\00_open\Proxima Fusion\261008-rd-engineer-pellet-injectors"),
+    # Path(r"H:\My Drive\Munka\00_open\Vesoma\261008-CAD Engineer"),
+    # Path(r"H:\My Drive\Munka\00_open\Helsing\260917-Simulation Engineer"),
+    # Path(r"H:\My Drive\Munka\99_test\x_musterman"),
 ]
 
 # Exact (case-sensitive) name of the folders holding the src content.
@@ -46,6 +51,12 @@ PDF_PREFIX = {
     "CV_academic": "cv",
     "cover_letter": "cover_letter",
     "onePDF": "application",
+}
+SUMMARY_ABBREVIATIONS = {
+    "CV": "CV",
+    "CV_academic": "CV",
+    "cover_letter": "CL",
+    "onePDF": "one",
 }
 
 
@@ -108,17 +119,53 @@ def sync_src(folder: Path) -> None:
             shutil.copy2(source, SRC_DIR / source.name)
 
 
-def process_folder(pdflatex: str, folder: Path, stem: str) -> bool:
+def application_metadata(folder: Path) -> tuple[str, str]:
+    """Extract company and position from Company/Date-Position/LaTeX_src paths."""
+    application_dir = folder.parent
+    company = application_dir.parent.name
+    position = re.sub(r"^\d{6}[-_ ]*", "", application_dir.name)
+    return company, position
+
+
+def summary_documents(folder: Path, results: dict[str, bool]) -> str:
+    """Format attempted document builds, marking failed projects with an asterisk."""
+    if not any(folder.glob("*.tex")):
+        return "none"
+
+    documents: list[str] = []
+    included: set[str] = set()
+    for project_name, abbreviation in SUMMARY_ABBREVIATIONS.items():
+        if project_name not in results or abbreviation in included:
+            continue
+        suffix = "" if results[project_name] else "*"
+        documents.append(f"{abbreviation}{suffix}")
+        included.add(abbreviation)
+    return ", ".join(documents)
+
+
+def summary_sort_key(item: tuple[Path, dict[str, bool]]) -> tuple[bool, int, str, str]:
+    """Sort failed applications first, then by output count and company/position."""
+    folder, results = item
+    has_failure = any(not success for success in results.values())
+    successful_count = sum(results.values())
+    company, position = application_metadata(folder)
+    return has_failure is False, successful_count, company.casefold(), position.casefold()
+
+
+def process_folder(pdflatex: str, folder: Path, stem: str) -> dict[str, bool]:
     print(f"\n=== {folder} ===")
     if not (folder / "content_CV.tex").is_file():
         print("SKIP: content_CV.tex is missing.")
-        return True
+        return {}
 
     sync_src(folder)
     parent = folder.parent
     onepdf_mode = (folder / "content_onePDF.tex").is_file()
     if onepdf_mode:
-        projects = [ONEPDF_CV, "cover_letter", "onePDF"]
+        projects = [ONEPDF_CV]
+        if (folder / "content_cover_letter.tex").is_file():
+            projects.append("cover_letter")
+        projects.append("onePDF")
     else:
         projects = ["CV"]
         if (folder / "content_cover_letter.tex").is_file():
@@ -129,18 +176,25 @@ def process_folder(pdflatex: str, folder: Path, stem: str) -> bool:
         project_dir = LATEX_ROOT / name
         clean_aux(project_dir)
         if name == "onePDF":
-            if not stage_onepdf_documents(ONEPDF_CV, results):
-                return False
+            staged_sources = {
+                "cv.pdf": parent / pdf_output_name(ONEPDF_CV, stem),
+                "cover_letter.pdf": (
+                    parent / pdf_output_name("cover_letter", stem)
+                    if (folder / "content_cover_letter.tex").is_file()
+                    else None
+                ),
+            }
+            if not stage_onepdf_documents(ONEPDF_CV, results, staged_sources):
+                results[name] = False
+                return results
             ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem), ONEPDF_PASSES)
-        elif onepdf_mode:
-            # Keep academic outputs available at the end location using the standard applicant stem naming.
-            ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem))
         else:
+            # Keep academic outputs available at the end location using standard applicant naming.
             ok = compile_project(pdflatex, name, parent, pdf_output_name(name, stem))
         results[name] = ok
         if not ok:
-            return False
-    return True
+            return results
+    return results
 
 
 def validate_config() -> str | None:
@@ -175,12 +229,16 @@ def main() -> int:
     results = {folder: process_folder(pdflatex, folder, stem) for folder in folders}
 
     print("\nSummary:")
-    for folder, ok in results.items():
-        parent = Path(folder).resolve().parent
-        link = f"\033]8;;{parent.as_uri()}\033\\{parent}\033]8;;\033\\"
-        print(f"  {'OK    ' if ok else 'FAILED'} {link}")
+    for folder, project_results in sorted(results.items(), key=summary_sort_key):
+        failed = any(not success for success in project_results.values())
+        company, position = application_metadata(folder)
+        company_link = company
+        if company:
+            company_link = f"\033]8;;{folder.parent.parent.resolve().as_uri()}\033\\{company}\033]8;;\033\\"
+        documents = summary_documents(folder, project_results)
+        print(f"  {'FAILED' if failed else 'OK'} | {documents} | {company_link} | {position}")
 
-    return 0 if all(results.values()) else 1
+    return 0 if all(not any(not success for success in item.values()) for item in results.values()) else 1
 
 
 if __name__ == "__main__":
